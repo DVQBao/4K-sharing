@@ -1,0 +1,7 @@
+=== MONGODB CONNECTION INFO ===
+
+Username: baodvq2501_db_user
+Password: ksnTmeHS62CjmCez
+
+Connection String:
+mongodb+srv://baodvq2501_db_user:ksnTmeHS62CjmCez@cluster0.r443ids.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
