@@ -52,12 +52,14 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const cookieRoutes = require('./routes/cookies');
 const adminRoutes = require('./routes/admin');
+const adminAuthRoutes = require('./routes/admin-auth');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cookies', cookieRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin-auth', adminAuthRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

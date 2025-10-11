@@ -5,10 +5,11 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { authenticateAdmin } = require('../middleware/admin-auth');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 // GET /api/admin/users - Danh sách tất cả users
-router.get('/users', authenticateToken, isAdmin, async (req, res) => {
+router.get('/users', authenticateAdmin, async (req, res) => {
     try {
         const users = await User.find()
             .select('-password')
@@ -32,7 +33,7 @@ router.get('/users', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // PUT /api/admin/users/:id/upgrade - Nâng cấp Pro
-router.put('/users/:id/upgrade', authenticateToken, isAdmin, async (req, res) => {
+router.put('/users/:id/upgrade', authenticateAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         
@@ -58,7 +59,7 @@ router.put('/users/:id/upgrade', authenticateToken, isAdmin, async (req, res) =>
 });
 
 // PUT /api/admin/users/:id/downgrade - Hạ cấp Free
-router.put('/users/:id/downgrade', authenticateToken, isAdmin, async (req, res) => {
+router.put('/users/:id/downgrade', authenticateAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         
@@ -84,7 +85,7 @@ router.put('/users/:id/downgrade', authenticateToken, isAdmin, async (req, res) 
 });
 
 // DELETE /api/admin/users/:id - Xóa user
-router.delete('/users/:id', authenticateToken, isAdmin, async (req, res) => {
+router.delete('/users/:id', authenticateAdmin, async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
         

@@ -482,40 +482,84 @@
         // ADMIN AUTHENTICATION
         // ========================================
 
-        function checkAdminAuth() {
-            const adminPassword = localStorage.getItem('admin_password');
-            const isAdmin = sessionStorage.getItem('admin_logged_in') === 'true';
+        async function checkAdminAuth() {
+            const adminToken = localStorage.getItem('admin_token');
             
-            if (!adminPassword || !isAdmin) {
+            if (!adminToken) {
                 showLoginModal();
-            } else {
-                loadUsers();
-                setupSearch();
+                return;
+            }
+            
+            try {
+                // Verify token with backend
+                const response = await fetch(`${BACKEND_URL}/api/admin-auth/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token: adminToken })
+                });
+                
+                if (response.ok) {
+                    loadUsers();
+                    setupSearch();
+                } else {
+                    localStorage.removeItem('admin_token');
+                    showLoginModal();
+                }
+            } catch (error) {
+                console.error('Admin auth verification failed:', error);
+                localStorage.removeItem('admin_token');
+                showLoginModal();
             }
         }
 
-        function showLoginModal() {
-            const password = prompt('🔐 Nhập mật khẩu Admin để truy cập:\n\n(Mật khẩu mặc định: admin123)');
+        async function showLoginModal() {
+            const username = prompt('🔐 Nhập tên đăng nhập Admin:');
+            if (!username) {
+                window.location.href = 'index.html';
+                return;
+            }
             
-            if (password === 'admin123') {
-                localStorage.setItem('admin_password', 'admin123');
-                sessionStorage.setItem('admin_logged_in', 'true');
-                showMessage('✅ Đăng nhập Admin thành công!', 'success');
-                loadUsers();
-                setupSearch();
-            } else if (password !== null) {
-                showMessage('❌ Mật khẩu Admin không đúng!', 'error');
+            const password = prompt('🔐 Nhập mật khẩu Admin:');
+            if (!password) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('admin_token', data.token);
+                    showMessage('✅ Đăng nhập Admin thành công!', 'success');
+                    loadUsers();
+                    setupSearch();
+                } else {
+                    showMessage('❌ ' + data.error, 'error');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Admin login error:', error);
+                showMessage('❌ Lỗi kết nối! Vui lòng thử lại.', 'error');
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
-            } else {
-                window.location.href = 'index.html';
             }
         }
 
         function logoutAdmin() {
-            localStorage.removeItem('admin_password');
-            sessionStorage.removeItem('admin_logged_in');
+            localStorage.removeItem('admin_token');
             showMessage('👋 Đã đăng xuất Admin!', 'info');
             setTimeout(() => {
                 window.location.href = 'index.html';
@@ -534,7 +578,7 @@
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
                     }
                 });
 
@@ -562,7 +606,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
                     },
                     body: JSON.stringify({ duration: parseInt(duration) })
                 });
@@ -587,7 +631,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
                     }
                 });
 
@@ -615,7 +659,7 @@
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
                     }
                 });
 
