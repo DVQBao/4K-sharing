@@ -386,12 +386,22 @@
                 <h3 id="verifiedUsers">-</h3>
                 <p>Đã xác thực</p>
             </div>
+            <div class="stat-card">
+                <h3 id="totalCookies">-</h3>
+                <p>Tổng Cookies</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="availableCookies">-</h3>
+                <p>Cookies Khả Dụng</p>
+            </div>
         </div>
 
         <div class="controls">
             <input type="text" id="searchBox" class="search-box" placeholder="🔍 Tìm kiếm theo tên hoặc email...">
             <button class="btn btn-primary" onclick="loadUsers()">🔄 Làm mới</button>
             <button class="btn btn-secondary" onclick="exportUsers()">📊 Xuất Excel</button>
+            <button class="btn btn-warning" onclick="importSampleCookies()">🍪 Import 100 Cookies</button>
+            <button class="btn btn-info" onclick="showCookieManagement()">🔧 Quản lý Cookies</button>
             <a href="index.html" class="btn btn-success">🏠 Về trang chủ</a>
         </div>
 
@@ -476,6 +486,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminAuth();
+            loadCookieStats();
         });
 
         // ========================================
@@ -836,6 +847,64 @@
             document.body.removeChild(link);
 
             showMessage('✅ Xuất file Excel thành công!', 'success');
+        }
+
+        // ========================================
+        // COOKIE MANAGEMENT
+        // ========================================
+
+        async function loadCookieStats() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/cookies/stats`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalCookies').textContent = data.total || 0;
+                    document.getElementById('availableCookies').textContent = data.available || 0;
+                }
+            } catch (error) {
+                console.error('❌ Load cookie stats error:', error);
+            }
+        }
+
+        async function importSampleCookies() {
+            if (!confirm('🍪 Bạn có chắc muốn import 100 sample cookies? (Sẽ xóa tất cả cookies cũ)')) {
+                return;
+            }
+
+            try {
+                showMessage('🔄 Đang import cookies...', 'info');
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/cookies/import-sample`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(`✅ ${data.message}`, 'success');
+                    loadCookieStats();
+                } else {
+                    showMessage(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Import cookies error:', error);
+                showMessage('❌ Lỗi kết nối! Vui lòng thử lại.', 'error');
+            }
+        }
+
+        function showCookieManagement() {
+            showMessage('🔧 Chức năng quản lý cookies chi tiết sẽ được thêm trong phiên bản tiếp theo!', 'info');
         }
 
         // Close modal when clicking outside

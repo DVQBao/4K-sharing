@@ -7,6 +7,38 @@ const router = express.Router();
 const Cookie = require('../models/Cookie');
 const { authenticateAdmin } = require('../middleware/admin-auth');
 
+// GET /api/admin/cookies/stats - Lấy thống kê cookies
+router.get('/stats', authenticateAdmin, async (req, res) => {
+    try {
+        const total = await Cookie.countDocuments();
+        const available = await Cookie.countDocuments({ 
+            isActive: true, 
+            usedBy: null,
+            $or: [
+                { expiresAt: null },
+                { expiresAt: { $gt: new Date() } }
+            ]
+        });
+        const used = await Cookie.countDocuments({ usedBy: { $ne: null } });
+        const expired = await Cookie.countDocuments({ 
+            expiresAt: { $lt: new Date() } 
+        });
+        
+        res.json({
+            success: true,
+            stats: {
+                total,
+                available,
+                used,
+                expired
+            }
+        });
+    } catch (error) {
+        console.error('❌ Get cookie stats error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/admin/cookies - Danh sách tất cả cookies
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
@@ -263,6 +295,50 @@ router.post('/:id/release', authenticateAdmin, async (req, res) => {
         
     } catch (error) {
         console.error('❌ Release cookie error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/admin/cookies/import-sample - Import 100 sample cookies
+router.post('/import-sample', authenticateAdmin, async (req, res) => {
+    try {
+        // Generate 100 sample cookies
+        const cookies = [];
+        const baseValue = 'v%3D3%26ct%3DBgjHlOvcAxL2Arigp8V5bErQqO0COTaSWib2zCUeC2qiNuXTYbv1SJ9nhrt-7hEakEDvt7HJVrkyGs09kIVt7M53Z8NzdbE75FOamF5q6XftereeruBU5v4pBNggbg97HNTqBxw2gE-UUt3hzyadHcNbdz8TQKYOtcyEmcBaxoXsAJR13QSyFT2-3RRQyYlM_H0O4BrTAczVvAc3SVKd2mkNtwf2CYjlaEVviS7JEDUFG2o4eMAE3db3aDn62DLw5AXK2C7YaKVfpv7nsfDitbTp1p0apNMByQEqNOq3dusmNVCIuHlH2HVhAiLO8_94BB2I0I49ebiC4XPX0fGYTqGDuU1gCkwYOxhMEQhysBmb8KKfbGdZhYn84_q0xRYcTUi_-DFI3nf8Jb8PogIWMh3o4vRH6oa2RzYwYvHr_RHH3Nifx_f5hKBX4L2u6DYSAcC2H2svlWGy2h-b-1AC4YhO821XH6zEWazzCs6poe0bo4jSuRBDny2Ql_xf0zbaGAYiDgoMzOor99BBEbYgNYcv%26pg%3DBCLYEPK2DJD2BDL7SZZ7JKLCRY%26ch%3DAQEAEAABABSiReww9rblxsEScDlWQSttVWEyFcNQGZc.';
+        
+        for (let i = 1; i <= 100; i++) {
+            const uniqueSuffix = Math.random().toString(36).substring(2, 15);
+            const cookieValue = baseValue + uniqueSuffix;
+            
+            cookies.push({
+                name: 'NetflixId',
+                value: cookieValue,
+                domain: '.netflix.com',
+                path: '/',
+                secure: true,
+                httpOnly: false,
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+                source: 'sample',
+                notes: `Sample cookie #${i} - Generated for testing`
+            });
+        }
+        
+        // Clear existing cookies
+        await Cookie.deleteMany({});
+        console.log('🗑️ Cleared existing cookies');
+        
+        // Insert new cookies
+        const savedCookies = await Cookie.insertMany(cookies);
+        console.log(`✅ Imported ${savedCookies.length} sample cookies`);
+        
+        res.json({
+            success: true,
+            message: `Successfully imported ${savedCookies.length} sample cookies`,
+            count: savedCookies.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Import sample cookies error:', error);
         res.status(500).json({ error: error.message });
     }
 });
