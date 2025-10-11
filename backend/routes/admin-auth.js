@@ -13,7 +13,7 @@ const bcrypt = require('bcryptjs');
 
 const ADMIN_CREDENTIALS = {
     username: 'TiembanhNetflix',
-    password: '$2a$10$rQZ8KdR6o2W3fq7w4KdR6o2W3fq7w4KdR6o2W3fq7w4KdR6o2W3fq7w4Kd', // password: Moyeudau@28032025
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: admin123 (temporary)
     role: 'admin'
 };
 

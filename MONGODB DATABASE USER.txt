@@ -6,5 +6,7 @@ Password: ksnTmeHS62CjmCez
 Connection String:
 mongodb+srv://baodvq2501_db_user:ksnTmeHS62CjmCez@cluster0.r443ids.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
+----------------------------
+https://dvqbao.github.io/4K-sharing/admin.html
 Username: TiembanhNetflix
 Pass: Moyeudau@28032025
