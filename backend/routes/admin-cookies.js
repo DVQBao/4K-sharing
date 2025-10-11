@@ -12,14 +12,16 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
     try {
         const total = await Cookie.countDocuments();
         const available = await Cookie.countDocuments({ 
-            isActive: true, 
-            usedBy: null,
+            isActive: true,
+            $expr: { $lt: [{ $size: "$currentUsers" }, "$maxUsers"] },
             $or: [
                 { expiresAt: null },
                 { expiresAt: { $gt: new Date() } }
             ]
         });
-        const used = await Cookie.countDocuments({ usedBy: { $ne: null } });
+        const used = await Cookie.countDocuments({ 
+            $expr: { $gt: [{ $size: "$currentUsers" }, 0] }
+        });
         const expired = await Cookie.countDocuments({ 
             expiresAt: { $lt: new Date() } 
         });

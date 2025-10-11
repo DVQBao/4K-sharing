@@ -688,14 +688,22 @@
         // ========================================
 
         function updateStats(stats) {
-            document.getElementById('totalUsers').textContent = stats.total || 0;
-            document.getElementById('freeUsers').textContent = stats.free || 0;
-            document.getElementById('proUsers').textContent = stats.pro || 0;
-            document.getElementById('verifiedUsers').textContent = stats.verified || 0;
+            const totalElement = document.getElementById('totalUsers');
+            const freeElement = document.getElementById('freeUsers');
+            const proElement = document.getElementById('proUsers');
+            
+            if (totalElement) totalElement.textContent = stats.total || 0;
+            if (freeElement) freeElement.textContent = stats.free || 0;
+            if (proElement) proElement.textContent = stats.pro || 0;
         }
 
         function renderUsersTable(users) {
             const tableContainer = document.getElementById('usersTable');
+            
+            if (!tableContainer) {
+                console.error('❌ usersTable element not found!');
+                return;
+            }
             
             if (users.length === 0) {
                 tableContainer.innerHTML = `
@@ -860,8 +868,15 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('totalCookies').textContent = data.total || 0;
-                    document.getElementById('availableCookies').textContent = data.available || 0;
+                    const totalElement = document.getElementById('totalCookies');
+                    const availableElement = document.getElementById('availableCookies');
+                    
+                    if (totalElement) {
+                        totalElement.textContent = data.stats?.total || 0;
+                    }
+                    if (availableElement) {
+                        availableElement.textContent = data.stats?.available || 0;
+                    }
                 }
             } catch (error) {
                 console.error('❌ Load cookie stats error:', error);
