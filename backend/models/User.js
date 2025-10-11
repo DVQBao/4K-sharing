@@ -48,7 +48,32 @@ const userSchema = new mongoose.Schema({
     lastLogin: {
         type: Date,
         default: null
-    }
+    },
+    lastLoginIP: {
+        type: String,
+        default: null
+    },
+    lastLoginDevice: {
+        type: String,
+        default: null
+    },
+    lastLoginLocation: {
+        type: String,
+        default: null
+    },
+    isLocked: {
+        type: Boolean,
+        default: false
+    },
+    loginHistory: [{
+        ip: String,
+        device: String,
+        location: String,
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true // Tự động tạo createdAt và updatedAt
 });

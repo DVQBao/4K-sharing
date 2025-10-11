@@ -7,6 +7,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
+const { getRequestInfo } = require('../utils/requestInfo');
 
 // ========================================
 // POST /api/auth/register - Đăng ký
@@ -112,14 +113,31 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         
+        // Check if account is locked
+        if (user.isLocked) {
+            return res.status(403).json({ error: 'Account is locked. Please contact admin.' });
+        }
+        
         // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
         
-        // Update last login
+        // Get request info (IP, device, location)
+        const { ip, device, location } = await getRequestInfo(req);
+        
+        // Update last login with tracking info
         user.lastLogin = new Date();
+        user.lastLoginIP = ip;
+        user.lastLoginDevice = device;
+        user.lastLoginLocation = location;
+        
+        // Add to login history (keep last 10 entries)
+        user.loginHistory.unshift({ ip, device, location });
+        if (user.loginHistory.length > 10) {
+            user.loginHistory = user.loginHistory.slice(0, 10);
+        }
         await user.save();
         
         // Generate JWT token

@@ -202,6 +202,18 @@
             background: #d4edda;
             color: #155724;
         }
+        
+        .status-active {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .status-locked {
+            color: #ef4444;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
 
         .status-verified {
             color: #28a745;
@@ -684,6 +696,260 @@
         }
 
         // ========================================
+        // NEW USER MANAGEMENT FUNCTIONS
+        // ========================================
+        
+        // Toggle password visibility
+        function togglePassword(userId) {
+            const passwordSpan = document.getElementById(`pwd-${userId}`);
+            const user = currentUsers.find(u => u._id === userId);
+            
+            if (!user) return;
+            
+            if (passwordSpan.textContent === '******') {
+                // Show password (need to fetch from backend)
+                passwordSpan.textContent = '🔄 Loading...';
+                // For security, we don't store passwords in frontend
+                // Admin should use "Reset Password" function instead
+                setTimeout(() => {
+                    passwordSpan.textContent = '******';
+                    alert('⚠️ Vì lý do bảo mật, mật khẩu không được hiển thị.\n\nVui lòng sử dụng chức năng "Reset Password" để tạo mật khẩu mới.');
+                }, 500);
+            }
+        }
+        
+        // Open Edit User Modal
+        async function openEditUserModal(userId) {
+            const user = currentUsers.find(u => u._id === userId);
+            if (!user) return;
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div id="editUserModal" style="display: block; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+                    <div style="background-color: white; margin: 5% auto; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%;">
+                        <h3 style="margin-top: 0;">✏️ Chỉnh sửa người dùng</h3>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Tên:</label>
+                            <input type="text" id="editName" value="${user.name}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email:</label>
+                            <input type="email" id="editEmail" value="${user.email}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Gói:</label>
+                            <select id="editPlan" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="free" ${user.plan === 'free' ? 'selected' : ''}>Free</option>
+                                <option value="pro" ${user.plan === 'pro' ? 'selected' : ''}>Pro</option>
+                            </select>
+                        </div>
+                        
+                        <div id="proExpiresContainer" style="margin-bottom: 15px; ${user.plan === 'pro' ? '' : 'display: none;'}">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Hết hạn Pro:</label>
+                            <input type="date" id="editProExpires" value="${user.proExpiresAt ? new Date(user.proExpiresAt).toISOString().split('T')[0] : ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="editIsLocked" ${user.isLocked ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>🔒 Khóa tài khoản</span>
+                            </label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                            <button onclick="closeEditUserModal()" class="btn btn-secondary">Hủy</button>
+                            <button onclick="saveUserEdit('${userId}')" class="btn btn-primary">💾 Lưu thay đổi</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove old modal if exists
+            const oldModal = document.getElementById('editUserModal');
+            if (oldModal) oldModal.remove();
+            
+            // Add new modal
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Add event listener for plan change
+            document.getElementById('editPlan').addEventListener('change', function() {
+                const proContainer = document.getElementById('proExpiresContainer');
+                proContainer.style.display = this.value === 'pro' ? 'block' : 'none';
+            });
+        }
+        
+        function closeEditUserModal() {
+            const modal = document.getElementById('editUserModal');
+            if (modal) modal.remove();
+        }
+        
+        async function saveUserEdit(userId) {
+            const name = document.getElementById('editName').value;
+            const email = document.getElementById('editEmail').value;
+            const plan = document.getElementById('editPlan').value;
+            const proExpiresAt = document.getElementById('editProExpires').value;
+            const isLocked = document.getElementById('editIsLocked').checked;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ name, email, plan, proExpiresAt, isLocked })
+                });
+                
+                if (!response.ok) throw new Error('Failed to update user');
+                
+                showMessage('✅ Cập nhật người dùng thành công!', 'success');
+                closeEditUserModal();
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showMessage('❌ Lỗi cập nhật: ' + error.message, 'error');
+            }
+        }
+        
+        // Reset Password
+        async function resetPassword(userId) {
+            const user = currentUsers.find(u => u._id === userId);
+            if (!user) return;
+            
+            const newPassword = prompt(`🔑 Nhập mật khẩu mới cho ${user.email}:\n(Tối thiểu 8 ký tự)`);
+            if (!newPassword || newPassword.length < 8) {
+                alert('❌ Mật khẩu phải có ít nhất 8 ký tự!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ newPassword })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error || 'Failed to reset password');
+                
+                alert(`✅ Mật khẩu đã được reset!\n\nEmail: ${user.email}\nMật khẩu mới: ${data.newPassword}\n\n⚠️ Vui lòng gửi thông tin này cho người dùng.`);
+                showMessage('✅ Reset mật khẩu thành công!', 'success');
+                
+            } catch (error) {
+                console.error('Error resetting password:', error);
+                showMessage('❌ Lỗi reset mật khẩu: ' + error.message, 'error');
+            }
+        }
+        
+        // Assign Cookie manually
+        async function assignCookieToUser(userId) {
+            const user = currentUsers.find(u => u._id === userId);
+            if (!user) return;
+            
+            const cookieId = prompt(`🍪 Nhập ID của Cookie muốn gán cho ${user.email}:`);
+            if (!cookieId) return;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}/assign-cookie`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ cookieId })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error || 'Failed to assign cookie');
+                
+                showMessage(`✅ Đã gán Cookie #${data.cookieNumber} cho ${user.email}!`, 'success');
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Error assigning cookie:', error);
+                showMessage('❌ Lỗi gán cookie: ' + error.message, 'error');
+            }
+        }
+        
+        // Lock/Unlock Account
+        async function toggleLockUser(userId) {
+            const user = currentUsers.find(u => u._id === userId);
+            if (!user) return;
+            
+            const action = user.isLocked ? 'mở khóa' : 'khóa';
+            if (!confirm(`⚠️ Bạn có chắc chắn muốn ${action} tài khoản ${user.email}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}/lock`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ isLocked: !user.isLocked })
+                });
+                
+                if (!response.ok) throw new Error('Failed to lock/unlock user');
+                
+                showMessage(`✅ Đã ${action} tài khoản thành công!`, 'success');
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Error locking/unlocking user:', error);
+                showMessage('❌ Lỗi: ' + error.message, 'error');
+            }
+        }
+        
+        // View Login History
+        async function viewLoginHistory(userId) {
+            const user = currentUsers.find(u => u._id === userId);
+            if (!user) return;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}/login-history`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error || 'Failed to get login history');
+                
+                let historyHTML = `📊 Lịch sử đăng nhập của ${data.email}:\n\n`;
+                
+                if (data.loginHistory && data.loginHistory.length > 0) {
+                    data.loginHistory.forEach((entry, index) => {
+                        const time = new Date(entry.timestamp).toLocaleString('vi-VN');
+                        historyHTML += `${index + 1}. ${time}\n`;
+                        historyHTML += `   IP: ${entry.ip}\n`;
+                        historyHTML += `   Thiết bị: ${entry.device}\n`;
+                        historyHTML += `   Vị trí: ${entry.location}\n\n`;
+                    });
+                } else {
+                    historyHTML += 'Chưa có lịch sử đăng nhập.';
+                }
+                
+                alert(historyHTML);
+                
+            } catch (error) {
+                console.error('Error getting login history:', error);
+                showMessage('❌ Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        // ========================================
         // UI FUNCTIONS
         // ========================================
 
@@ -721,11 +987,16 @@
                             <th>STT</th>
                             <th>Tên</th>
                             <th>Email</th>
+                            <th>🔑 MK</th>
                             <th>Gói</th>
                             <th>Cookie #</th>
+                            <th>🌐 IP</th>
+                            <th>🖥️ Thiết bị</th>
+                            <th>🌍 Vị trí</th>
                             <th>Ngày tạo</th>
                             <th>Hết hạn Pro</th>
                             <th>Đăng nhập cuối</th>
+                            <th>🔒 Trạng thái</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -747,19 +1018,41 @@
                     cookieDisplay = `#${cookieNumber} (${usersCount}/${maxUsers})`;
                     cookieColor = usersCount >= maxUsers ? '#f59e0b' : '#10b981';
                 }
+                
+                // Password display (hidden by default)
+                const passwordId = `pwd-${user._id}`;
+                const passwordDisplay = `
+                    <span id="${passwordId}" style="font-family: monospace; font-size: 0.85rem;">******</span>
+                    <button class="btn btn-sm" style="padding: 2px 6px; margin-left: 4px;" onclick="togglePassword('${user._id}')">👁️</button>
+                `;
+                
+                // IP, Device, Location
+                const ip = user.lastLoginIP || '-';
+                const device = user.lastLoginDevice || '-';
+                const location = user.lastLoginLocation || '-';
+                
+                // Account status
+                const statusClass = user.isLocked ? 'status-locked' : 'status-active';
+                const statusText = user.isLocked ? '🔒 Khóa' : '✅ Hoạt động';
 
                 tableHTML += `
-                    <tr>
+                    <tr data-user-id="${user._id}">
                         <td>${index + 1}</td>
                         <td>${user.name}</td>
                         <td>${user.email}</td>
+                        <td>${passwordDisplay}</td>
                         <td><span class="plan-badge ${planClass}">${planText}</span></td>
                         <td><span style="color: ${cookieColor}; font-family: monospace; font-weight: 600;">${cookieDisplay}</span></td>
+                        <td style="font-size: 0.85rem; color: #6b7280;">${ip}</td>
+                        <td style="font-size: 0.85rem; color: #6b7280;">${device}</td>
+                        <td style="font-size: 0.85rem; color: #6b7280;">${location}</td>
                         <td>${createdAt}</td>
                         <td>${proExpires}</td>
                         <td>${lastLogin}</td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
                         <td>
                             <div class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="openEditUserModal('${user._id}')">✏️ Sửa</button>
                                 ${user.plan === 'free' ? 
                                     `<button class="btn btn-success btn-sm" onclick="openUpgradeModal('${user._id}', '${user.name}', '${user.email}')">🚀 Pro</button>` :
                                     `<button class="btn btn-warning btn-sm" onclick="openDowngradeModal('${user._id}', '${user.name}', '${user.email}')">⬇️ Free</button>`
