@@ -989,16 +989,17 @@
                 </div>
                 
                 <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
-                        <input type="text" id="cookieSearchBox" class="search-box" placeholder="🔍 Tìm Cookie #..." style="margin: 0;">
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr; gap: 10px;">
+                        <input type="text" id="cookieSearchBox" class="search-box" placeholder="🔍 Tìm Cookie #, value, ghi chú..." style="margin: 0;">
                         <select id="cookieStatusFilter" class="search-box" style="margin: 0;">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="available">Còn slot</option>
-                            <option value="full">Đã đầy (4/4)</option>
-                            <option value="expired">Hết hạn</option>
+                            <option value="">📊 Tất cả trạng thái</option>
+                            <option value="available">✅ Còn slot</option>
+                            <option value="full">🔒 Đã đầy (4/4)</option>
+                            <option value="expired">⏰ Hết hạn</option>
                         </select>
-                        <button class="btn btn-success" onclick="showAddCookieModal()">➕ Thêm Cookie</button>
-                        <button class="btn btn-danger" onclick="deleteAllCookies()">🗑️ Xóa tất cả</button>
+                        <button class="btn btn-success" onclick="showAddCookieModal()">➕ Thêm</button>
+                        <button class="btn btn-warning" onclick="showImportCookiesModal()">📁 Import</button>
+                        <button class="btn btn-danger" onclick="deleteAllCookies()">🗑️ Xóa hết</button>
                     </div>
                 </div>
                 
