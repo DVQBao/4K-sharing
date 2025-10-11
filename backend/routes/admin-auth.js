@@ -25,19 +25,29 @@ router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         
+        console.log('🔐 Admin login attempt:', { username, password: '***' });
+        console.log('📋 Expected username:', ADMIN_CREDENTIALS.username);
+        
         // Validate
         if (!username || !password) {
+            console.log('❌ Missing username or password');
             return res.status(400).json({ error: 'Username and password are required' });
         }
         
         // Check credentials
         if (username !== ADMIN_CREDENTIALS.username) {
+            console.log('❌ Username mismatch:', username, '!=', ADMIN_CREDENTIALS.username);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
+        console.log('✅ Username matched, checking password...');
+        
         // Check password
         const isMatch = await bcrypt.compare(password, ADMIN_CREDENTIALS.password);
+        console.log('🔐 Password match result:', isMatch);
+        
         if (!isMatch) {
+            console.log('❌ Password mismatch');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
