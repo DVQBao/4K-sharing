@@ -432,21 +432,10 @@ function animateAdContent() {
  * Đọc cookie và gửi tới extension để inject
  */
 async function handleStartWatching() {
-    console.log('🚀 Starting Netflix session...');
+    console.log('🚀 Starting Netflix session with auto-retry...');
     
     try {
-        // Bước 1: Đọc cookie từ file
-        showStepStatus(2, 'success', '⏳ Đang tải...');
-        
-        const cookieData = await readCookieFromFile();
-        
-        if (!cookieData) {
-            throw new Error('Không thể đọc thông tin tài khoản');
-        }
-        
-        console.log('✅ Account loaded:', cookieData);
-        
-        // Bước 2: Kiểm tra extension
+        // Kiểm tra extension trước
         if (!state.hasExtension) {
             showStepStatus(2, 'error', '❌ Cần extension để login. Vui lòng cài extension.');
             showToast('Cần cài extension để login', 'error');
@@ -454,19 +443,42 @@ async function handleStartWatching() {
             return;
         }
         
-        // Bước 3: Gửi cookie tới extension
-        showStepStatus(2, 'success', '📤 Đang gửi yêu cầu tới extension...');
+        // Tạo retry handler
+        const retryHandler = new CookieRetryHandler(
+            BACKEND_URL,
+            localStorage.getItem('auth_token')
+        );
         
-        const result = await injectCookieViaExtension(cookieData);
+        // Bắt đầu quá trình login với auto-retry
+        showStepStatus(2, 'success', '⏳ Đang kết nối...');
+        
+        const result = await retryHandler.attemptLogin((progress) => {
+            // Cập nhật UI dựa trên tiến trình
+            console.log('🔄 Progress:', progress);
+            
+            if (progress.status === 'trying') {
+                showStepStatus(2, 'success', `⏳ ${progress.message}`);
+            } else if (progress.status === 'retrying') {
+                showStepStatus(2, 'warning', `🔄 ${progress.message}`);
+                if (progress.errorCode) {
+                    showToast(`Cookie lỗi (${progress.errorCode}), đang thử cookie khác...`, 'warning');
+                }
+            } else if (progress.status === 'success') {
+                showStepStatus(2, 'success', `✅ ${progress.message}`);
+            } else if (progress.status === 'failed') {
+                showStepStatus(2, 'error', `❌ ${progress.message}`);
+            }
+        });
         
         if (result.success) {
-            showStepStatus(2, 'success', '✅ Thành công! Đang reload Netflix...');
-            showToast('🎉 Login thành công! Đang reload Netflix...', 'success');
+            // Thành công!
+            showStepStatus(2, 'success', '✅ Đăng nhập thành công! Đang chuyển sang Netflix...');
+            showToast('🎉 Đăng nhập thành công!', 'success');
             
             // Đóng modal
             closeAdModal();
             
-            // Tự động focus vào tab Netflix
+            // Focus vào tab Netflix
             setTimeout(() => {
                 if (state.netflixTabRef && !state.netflixTabRef.closed) {
                     try {
@@ -480,16 +492,19 @@ async function handleStartWatching() {
                 } else {
                     showStepStatus(2, 'success', '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim.');
                 }
-            }, 2000); // Đợi 2 giây để Netflix reload xong
+            }, 2000);
             
         } else {
-            throw new Error(result.error || 'Unknown error from extension');
+            // Thất bại sau khi đã retry
+            const errorMsg = result.error || 'Không thể đăng nhập sau nhiều lần thử';
+            showStepStatus(2, 'error', `❌ ${errorMsg}`);
+            showToast(`❌ ${errorMsg}`, 'error');
         }
         
     } catch (error) {
-        console.error('❌ Error:', error);
-        showStepStatus(2, 'error', `❌ Lỗi: ${error.message}`);
-        showToast(`Lỗi: ${error.message}`, 'error');
+        console.error('❌ Start watching error:', error);
+        showStepStatus(2, 'error', '❌ Lỗi hệ thống: ' + error.message);
+        showToast('❌ Có lỗi xảy ra: ' + error.message, 'error');
     }
 }
 
@@ -694,6 +709,15 @@ Extension ID sẽ hiện ở banner màu xanh khi cài thành công.
 // DEBUG
 // ========================================
 
+// ========================================
+// EXPOSE FUNCTIONS FOR COOKIE RETRY HANDLER
+// ========================================
+
+// Make functions available globally for CookieRetryHandler
+window.injectCookieViaExtension = injectCookieViaExtension;
+window.state = state;
+window.CONFIG = CONFIG;
+
 console.log(`
 ╔════════════════════════════════════════════════════╗
 ║     🎬 Netflix Guest Sharing - Initialized        ║
@@ -703,7 +727,8 @@ console.log(`
 ║  ② Watch as Guest  → Ad → Cookie Injection        ║
 ╠════════════════════════════════════════════════════╣
 ║  Extension Required: Netflix Guest Helper          ║
-║  Waiting for extension detection...               ║
+║  Auto-retry: ✅ (NEW!)                             ║
+║  Error Detection: ✅ (NEW!)                        ║
 ╚════════════════════════════════════════════════════╝
 `);
 

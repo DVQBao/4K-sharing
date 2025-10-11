@@ -163,8 +163,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     // Check login status
     if (request.action === 'checkLoginStatus') {
-        const isLoggedIn = checkLoginStatus();
-        sendResponse({ isLoggedIn, url: window.location.href });
+        const loginResult = checkLoginStatus();
+        sendResponse({ 
+            success: loginResult.success,
+            status: loginResult.status,
+            errorCode: loginResult.errorCode,
+            url: window.location.href 
+        });
     }
     
     return false;

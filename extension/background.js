@@ -105,6 +105,61 @@ chrome.runtime.onMessageExternal.addListener(
             return true; // Keep channel open for async response
         }
         
+        // Handle checkNetflixStatus request
+        if (request.action === 'checkNetflixStatus') {
+            (async () => {
+                try {
+                    // Find Netflix tab
+                    const tabs = await chrome.tabs.query({
+                        url: 'https://www.netflix.com/*'
+                    });
+                    
+                    if (tabs.length === 0) {
+                        sendResponse({ 
+                            success: false, 
+                            error: 'No Netflix tab found' 
+                        });
+                        return;
+                    }
+                    
+                    const netflixTab = tabs[0];
+                    
+                    // Send message to content script to check login status
+                    const response = await chrome.tabs.sendMessage(netflixTab.id, {
+                        action: 'checkLoginStatus'
+                    });
+                    
+                    if (response && response.success) {
+                        sendResponse({
+                            success: true,
+                            loginStatus: 'success',
+                            url: response.url
+                        });
+                    } else if (response && response.errorCode) {
+                        sendResponse({
+                            success: true,
+                            loginStatus: 'error',
+                            errorCode: response.errorCode
+                        });
+                    } else {
+                        sendResponse({
+                            success: true,
+                            loginStatus: 'unknown'
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Check Netflix status error:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message 
+                    });
+                }
+            })();
+            
+            return true; // Keep channel open for async response
+        }
+        
         return false;
     }
 );
