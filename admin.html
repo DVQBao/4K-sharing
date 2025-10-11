@@ -103,36 +103,50 @@
             background: #6c757d;
             color: white;
         }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.875rem;
+        }
+        
+        /* Ensure inline styles work */
+        button[style*="display: none"] {
+            display: none !important;
+        }
+        
+        button[style*="display: inline-block"] {
+            display: inline-block !important;
+        }
 
         .btn-secondary:hover {
             background: #545b62;
         }
-
+        
         .btn-success {
             background: #28a745;
             color: white;
         }
-
+        
         .btn-success:hover {
             background: #218838;
         }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-
+        
         .btn-danger {
             background: #dc3545;
             color: white;
         }
-
+        
         .btn-danger:hover {
             background: #c82333;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
         }
 
         .search-box {
@@ -951,10 +965,12 @@
                         </td>
                         <td>${lastLogin}</td>
                         <td>
-                            <button class="btn btn-primary btn-sm edit-btn" onclick="enableEditRow('${user._id}')">✏️ Sửa</button>
-                            <button class="btn btn-success btn-sm save-btn" onclick="saveUserRow('${user._id}')" style="display: none;">💾 Lưu</button>
-                            <button class="btn btn-secondary btn-sm cancel-btn" onclick="cancelEditRow('${user._id}')" style="display: none;">❌ Hủy</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteUser('${user._id}')">🗑️</button>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="btn btn-primary btn-sm edit-btn" onclick="enableEditRow('${user._id}')">✏️ Sửa</button>
+                                <button class="btn btn-success btn-sm save-btn" onclick="saveUserRow('${user._id}')" style="display: none;">💾 Lưu</button>
+                                <button class="btn btn-secondary btn-sm cancel-btn" onclick="cancelEditRow('${user._id}')" style="display: none;">❌ Hủy</button>
+                                <button class="btn btn-danger btn-sm delete-btn" onclick="deleteUser('${user._id}')">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                 `;
