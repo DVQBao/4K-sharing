@@ -36,7 +36,7 @@ setTimeout(broadcastExtensionPresence, 1000);
 
 /**
  * Kiểm tra xem đã đăng nhập Netflix chưa
- * Dựa vào URL pathname
+ * Dựa vào URL pathname và detect lỗi
  */
 function checkLoginStatus() {
     const currentPath = window.location.pathname;
@@ -48,15 +48,68 @@ function checkLoginStatus() {
         // Notify background script
         chrome.runtime.sendMessage({
             action: 'loginSuccess',
-            url: window.location.href
+            url: window.location.href,
+            status: 'success'
         }).catch(err => {
             console.log('Note: Could not send message to background:', err);
         });
         
-        return true;
+        return { success: true, status: 'success' };
     }
     
-    return false;
+    // Check for error page (NSES-500, etc.)
+    const errorCode = detectNetflixError();
+    if (errorCode) {
+        console.log('❌ Detected Netflix error:', errorCode);
+        
+        // Notify background script about error
+        chrome.runtime.sendMessage({
+            action: 'loginError',
+            errorCode: errorCode,
+            url: window.location.href,
+            status: 'error'
+        }).catch(err => {
+            console.log('Note: Could not send message to background:', err);
+        });
+        
+        return { success: false, status: 'error', errorCode };
+    }
+    
+    return { success: false, status: 'unknown' };
+}
+
+/**
+ * Detect Netflix error codes (NSES-500, etc.)
+ */
+function detectNetflixError() {
+    // Check for error code in page content
+    const bodyText = document.body.innerText;
+    
+    // Common Netflix error patterns
+    const errorPatterns = [
+        /NSES-\d+/,
+        /Error Code:\s*NSES-\d+/i,
+        /Something went wrong/i
+    ];
+    
+    for (const pattern of errorPatterns) {
+        const match = bodyText.match(pattern);
+        if (match) {
+            return match[0];
+        }
+    }
+    
+    // Check for error elements
+    const errorElements = document.querySelectorAll('[class*="error"], [class*="Error"]');
+    for (const el of errorElements) {
+        const text = el.innerText;
+        if (text.includes('NSES-') || text.includes('Error Code')) {
+            const match = text.match(/NSES-\d+/);
+            if (match) return match[0];
+        }
+    }
+    
+    return null;
 }
 
 // Check ngay khi load
