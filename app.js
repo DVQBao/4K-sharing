@@ -286,7 +286,7 @@ function handleWatchAsGuest() {
             showToast('⭐ Pro user - Bắt đầu xem ngay!', 'success');
             
             // Mở modal watching section (không cần ad)
-            openAdModal();
+            showAdModal();
             elements.adSection.style.display = 'none';
             elements.watchingSection.style.display = 'block';
             
