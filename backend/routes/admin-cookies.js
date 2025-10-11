@@ -136,39 +136,45 @@ router.get('/', authenticateAdmin, async (req, res) => {
     }
 });
 
-// POST /api/admin/cookies - Thêm cookies mới
+// POST /api/admin/cookies - Thêm cookie mới (single)
 router.post('/', authenticateAdmin, async (req, res) => {
     try {
-        const { cookies, source = 'manual' } = req.body;
+        const { value, notes, expiresAt } = req.body;
         
-        if (!cookies || !Array.isArray(cookies)) {
-            return res.status(400).json({ error: 'Cookies array is required' });
+        if (!value) {
+            return res.status(400).json({ error: 'Cookie value is required' });
         }
         
-        const cookieDocs = cookies.map(cookieData => ({
-            name: cookieData.name || 'NetflixId',
-            value: cookieData.value,
-            domain: cookieData.domain || '.netflix.com',
-            path: cookieData.path || '/',
-            secure: cookieData.secure !== false,
-            httpOnly: cookieData.httpOnly || false,
-            expiresAt: cookieData.expiresAt ? new Date(cookieData.expiresAt) : null,
-            source,
-            notes: cookieData.notes || ''
-        }));
+        // Get next cookie number
+        const maxCookie = await Cookie.findOne().sort({ cookieNumber: -1 });
+        const nextNumber = (maxCookie?.cookieNumber || 0) + 1;
         
-        const savedCookies = await Cookie.insertMany(cookieDocs);
+        const newCookie = new Cookie({
+            name: 'NetflixId',
+            value: value,
+            domain: '.netflix.com',
+            path: '/',
+            secure: true,
+            httpOnly: false,
+            cookieNumber: nextNumber,
+            maxUsers: 4,
+            currentUsers: [],
+            expiresAt: expiresAt ? new Date(expiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            source: 'manual',
+            notes: notes || ''
+        });
         
-        console.log(`✅ ${savedCookies.length} cookies added by admin`);
+        await newCookie.save();
+        console.log(`✅ Added new cookie #${nextNumber}`);
         
         res.status(201).json({
             success: true,
-            message: `${savedCookies.length} cookies added successfully`,
-            cookies: savedCookies
+            message: `Added cookie #${nextNumber}`,
+            cookie: newCookie
         });
         
     } catch (error) {
-        console.error('❌ Add cookies error:', error);
+        console.error('❌ Add cookie error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -208,6 +214,23 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
         
     } catch (error) {
         console.error('❌ Update cookie error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/admin/cookies/delete-all - Xóa tất cả cookies
+router.delete('/delete-all', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await Cookie.deleteMany({});
+        console.log(`🗑️ Deleted all cookies: ${result.deletedCount} cookies`);
+        
+        res.json({
+            success: true,
+            message: `Deleted ${result.deletedCount} cookies`,
+            count: result.deletedCount
+        });
+    } catch (error) {
+        console.error('❌ Delete all cookies error:', error);
         res.status(500).json({ error: error.message });
     }
 });
