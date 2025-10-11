@@ -11,10 +11,13 @@ const Cookie = require('../models/Cookie');
 router.get('/guest', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
+        console.log('🍪 Cookie request from user:', req.user.email, 'ID:', userId);
+        
         const User = require('../models/User');
         const user = await User.findById(userId);
         
         if (!user) {
+            console.log('❌ User not found:', userId);
             return res.status(404).json({ error: 'User not found' });
         }
         
@@ -27,8 +30,11 @@ router.get('/guest', authenticateToken, async (req, res) => {
             isActive: true 
         });
         
+        console.log('🔍 Existing cookie for user:', cookie ? `#${cookie.cookieNumber}` : 'None');
+        
         // Nếu chưa có cookie, tìm cookie available
         if (!cookie) {
+            console.log('🔍 Searching for available cookie...');
             // Tìm cookie còn slot (< maxUsers)
             cookie = await Cookie.findOne({ 
                 isActive: true,
@@ -40,13 +46,16 @@ router.get('/guest', authenticateToken, async (req, res) => {
             }).sort({ cookieNumber: 1, usageCount: 1 }); // Ưu tiên cookie số nhỏ và ít dùng
             
             if (!cookie) {
+                console.log('❌ No available cookies found');
                 return res.status(503).json({ 
                     error: 'No cookies available. Please try again later.' 
                 });
             }
             
+            console.log('✅ Found available cookie:', `#${cookie.cookieNumber}`);
             // Assign cookie to user
             await cookie.assignToUser(userId);
+            console.log('✅ Assigned cookie to user');
         }
         
         // Check if cookie is expired
