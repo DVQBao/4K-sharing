@@ -360,6 +360,11 @@
         <div class="header">
             <h1>🎬 Admin Panel</h1>
             <p>Quản lý khách hàng TIỆM BÁNH NETFLIX</p>
+            <div style="margin-top: 15px;">
+                <button class="btn btn-danger" onclick="logoutAdmin()" style="font-size: 0.9em; padding: 8px 16px;">
+                    🚪 Đăng xuất Admin
+                </button>
+            </div>
         </div>
 
         <div id="messageArea"></div>
@@ -470,9 +475,52 @@
         // ========================================
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadUsers();
-            setupSearch();
+            checkAdminAuth();
         });
+
+        // ========================================
+        // ADMIN AUTHENTICATION
+        // ========================================
+
+        function checkAdminAuth() {
+            const adminPassword = localStorage.getItem('admin_password');
+            const isAdmin = sessionStorage.getItem('admin_logged_in') === 'true';
+            
+            if (!adminPassword || !isAdmin) {
+                showLoginModal();
+            } else {
+                loadUsers();
+                setupSearch();
+            }
+        }
+
+        function showLoginModal() {
+            const password = prompt('🔐 Nhập mật khẩu Admin để truy cập:\n\n(Mật khẩu mặc định: admin123)');
+            
+            if (password === 'admin123') {
+                localStorage.setItem('admin_password', 'admin123');
+                sessionStorage.setItem('admin_logged_in', 'true');
+                showMessage('✅ Đăng nhập Admin thành công!', 'success');
+                loadUsers();
+                setupSearch();
+            } else if (password !== null) {
+                showMessage('❌ Mật khẩu Admin không đúng!', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('admin_password');
+            sessionStorage.removeItem('admin_logged_in');
+            showMessage('👋 Đã đăng xuất Admin!', 'info');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
 
         // ========================================
         // API FUNCTIONS
