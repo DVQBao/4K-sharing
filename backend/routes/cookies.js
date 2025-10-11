@@ -66,9 +66,16 @@ router.get('/guest', authenticateToken, async (req, res) => {
             });
         }
         
+        // Clean cookie value - remove "NetflixId=" prefix if exists
+        let cleanValue = cookie.value;
+        if (cleanValue.startsWith('NetflixId=')) {
+            cleanValue = cleanValue.substring('NetflixId='.length);
+            console.log('🧹 Cleaned cookie value (removed NetflixId= prefix)');
+        }
+        
         const cookieData = {
             name: cookie.name,
-            value: cookie.value,
+            value: cleanValue,
             domain: cookie.domain,
             path: cookie.path,
             secure: cookie.secure,
@@ -76,6 +83,7 @@ router.get('/guest', authenticateToken, async (req, res) => {
         };
         
         console.log(`✅ Cookie #${cookie.cookieNumber} provided to user:`, req.user.email, `(${cookie.currentUsers.length}/${cookie.maxUsers} users)`);
+        console.log('🍪 Cookie value preview:', cleanValue.substring(0, 50) + '...');
         
         res.json({
             success: true,
