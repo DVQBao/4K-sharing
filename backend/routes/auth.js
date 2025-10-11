@@ -41,6 +41,33 @@ router.post('/register', async (req, res) => {
         
         await user.save();
         
+        // Auto assign cookie for new user
+        const Cookie = require('../models/Cookie');
+        let assignedCookie = null;
+        
+        try {
+            // Find available cookie
+            const cookie = await Cookie.findOne({ 
+                isActive: true,
+                $expr: { $lt: [{ $size: "$currentUsers" }, "$maxUsers"] },
+                $or: [
+                    { expiresAt: null },
+                    { expiresAt: { $gt: new Date() } }
+                ]
+            }).sort({ cookieNumber: 1, usageCount: 1 });
+            
+            if (cookie) {
+                await cookie.assignToUser(user._id);
+                assignedCookie = cookie;
+                console.log(`🍪 Auto assigned Cookie #${cookie.cookieNumber} to new user: ${email}`);
+            } else {
+                console.log('⚠️ No available cookies for new user:', email);
+            }
+        } catch (cookieError) {
+            console.error('❌ Cookie assignment error:', cookieError);
+            // Continue registration even if cookie assignment fails
+        }
+        
         // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, email: user.email },
@@ -53,7 +80,11 @@ router.post('/register', async (req, res) => {
         res.status(201).json({
             success: true,
             token,
-            user: user.toJSON()
+            user: user.toJSON(),
+            assignedCookie: assignedCookie ? {
+                cookieNumber: assignedCookie.cookieNumber,
+                usersCount: assignedCookie.currentUsers.length
+            } : null
         });
         
     } catch (error) {
@@ -113,7 +144,7 @@ router.post('/login', async (req, res) => {
 });
 
 // ========================================
-// GET /api/auth/me - Get current user
+// GET /api/auth/me - Get current user with cookie info
 // ========================================
 
 router.get('/me', authenticateToken, async (req, res) => {
@@ -124,9 +155,33 @@ router.get('/me', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         
+        // Get assigned cookie info
+        const Cookie = require('../models/Cookie');
+        let cookieInfo = null;
+        
+        try {
+            const cookie = await Cookie.findOne({ 
+                currentUsers: req.user.userId,
+                isActive: true 
+            });
+            
+            if (cookie) {
+                cookieInfo = {
+                    cookieNumber: cookie.cookieNumber,
+                    usersCount: cookie.currentUsers.length,
+                    maxUsers: cookie.maxUsers,
+                    expiresAt: cookie.expiresAt,
+                    isExpired: cookie.isExpired()
+                };
+            }
+        } catch (cookieError) {
+            console.error('❌ Get cookie info error:', cookieError);
+        }
+        
         res.json({
             success: true,
-            user: user.toJSON()
+            user: user.toJSON(),
+            cookieInfo
         });
         
     } catch (error) {

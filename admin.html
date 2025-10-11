@@ -738,6 +738,15 @@
                 const createdAt = new Date(user.createdAt).toLocaleDateString('vi-VN');
                 const proExpires = user.proExpiresAt ? new Date(user.proExpiresAt).toLocaleDateString('vi-VN') : '-';
                 const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập';
+                
+                // Cookie info
+                let cookieDisplay = '-';
+                let cookieColor = '#6b7280';
+                if (user.cookieInfo) {
+                    const { cookieNumber, usersCount, maxUsers } = user.cookieInfo;
+                    cookieDisplay = `#${cookieNumber} (${usersCount}/${maxUsers})`;
+                    cookieColor = usersCount >= maxUsers ? '#f59e0b' : '#10b981';
+                }
 
                 tableHTML += `
                     <tr>
@@ -745,7 +754,7 @@
                         <td>${user.name}</td>
                         <td>${user.email}</td>
                         <td><span class="plan-badge ${planClass}">${planText}</span></td>
-                        <td><span style="color: #10b981; font-family: monospace;">-</span></td>
+                        <td><span style="color: ${cookieColor}; font-family: monospace; font-weight: 600;">${cookieDisplay}</span></td>
                         <td>${createdAt}</td>
                         <td>${proExpires}</td>
                         <td>${lastLogin}</td>

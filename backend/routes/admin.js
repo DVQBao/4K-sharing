@@ -8,12 +8,38 @@ const User = require('../models/User');
 const { authenticateAdmin } = require('../middleware/admin-auth');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
-// GET /api/admin/users - Danh sách tất cả users
+// GET /api/admin/users - Danh sách tất cả users with cookie info
 router.get('/users', authenticateAdmin, async (req, res) => {
     try {
         const users = await User.find()
             .select('-password')
             .sort({ createdAt: -1 });
+        
+        // Get cookie info for each user
+        const Cookie = require('../models/Cookie');
+        const usersWithCookies = await Promise.all(
+            users.map(async (user) => {
+                const userObj = user.toJSON();
+                
+                // Find cookie assigned to this user
+                const cookie = await Cookie.findOne({ 
+                    currentUsers: user._id,
+                    isActive: true 
+                });
+                
+                if (cookie) {
+                    userObj.cookieInfo = {
+                        cookieNumber: cookie.cookieNumber,
+                        usersCount: cookie.currentUsers.length,
+                        maxUsers: cookie.maxUsers
+                    };
+                } else {
+                    userObj.cookieInfo = null;
+                }
+                
+                return userObj;
+            })
+        );
         
         const stats = {
             total: users.length,
@@ -23,7 +49,7 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         
         res.json({
             success: true,
-            users,
+            users: usersWithCookies,
             stats
         });
         
