@@ -1,7 +1,13 @@
 // ========================================
 // Netflix Guest Sharing - Authentication
-// Anti-Spam Features
+// Anti-Spam Features + Backend API Integration
 // ========================================
+
+// ========================================
+// BACKEND CONFIGURATION
+// ========================================
+
+const BACKEND_URL = 'https://fourk-sharing.onrender.com';
 
 // ========================================
 // ANTI-SPAM STATE
@@ -122,7 +128,7 @@ function logout() {
 // LOGIN HANDLER
 // ========================================
 
-function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
     clearMessages();
     
@@ -131,35 +137,46 @@ function handleLogin(event) {
     
     console.log('🔐 Login attempt:', email);
     
-    // Find user
-    const user = findUserByEmail(email);
-    
-    if (!user) {
-        showError('❌ Email chưa được đăng ký!');
-        return;
+    try {
+        // Call backend API
+        const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Login successful
+            console.log('✅ Login successful:', data.user.email);
+            
+            // Store token and user data
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('current_user', JSON.stringify(data.user));
+            sessionStorage.setItem('logged_in', 'true');
+            
+            showSuccess('✅ Đăng nhập thành công! Đang chuyển hướng...');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        } else {
+            showError(`❌ ${data.error || 'Đăng nhập thất bại!'}`);
+        }
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        showError('❌ Lỗi kết nối! Vui lòng thử lại sau.');
     }
-    
-    // Check password
-    if (user.password !== password) {
-        showError('❌ Mật khẩu không đúng!');
-        return;
-    }
-    
-    // Login successful
-    console.log('✅ Login successful:', user.email);
-    setCurrentUser(user);
-    showSuccess('✅ Đăng nhập thành công! Đang chuyển hướng...');
-    
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 1000);
 }
 
 // ========================================
 // REGISTER HANDLER
 // ========================================
 
-function handleRegister(event) {
+async function handleRegister(event) {
     event.preventDefault();
     clearMessages();
     
@@ -231,36 +248,45 @@ function handleRegister(event) {
         return;
     }
     
-    // Check if email exists
-    if (findUserByEmail(email)) {
-        showError('❌ Email đã được đăng ký!');
-        return;
+    try {
+        // Call backend API
+        const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Registration successful
+            console.log('✅ Registration successful:', data.user.email);
+            
+            // Store token and user data
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('current_user', JSON.stringify(data.user));
+            sessionStorage.setItem('logged_in', 'true');
+            
+            // Update anti-spam tracking
+            antiSpam.lastRegisterTime = now;
+            registerHistory.push(now);
+            localStorage.setItem('register_history', JSON.stringify(registerHistory));
+            
+            showSuccess('✅ Đăng ký thành công! Đang đăng nhập...');
+            
+            // Auto login
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        } else {
+            showError(`❌ ${data.error || 'Đăng ký thất bại!'}`);
+        }
+    } catch (error) {
+        console.error('❌ Registration error:', error);
+        showError('❌ Lỗi kết nối! Vui lòng thử lại sau.');
     }
-    
-    // Create user
-    const userData = {
-        name,
-        email,
-        password,
-        provider: 'local',
-        verified: false // Email verification pending
-    };
-    
-    createUser(userData);
-    console.log('✅ User created:', email);
-    
-    // Update anti-spam tracking
-    antiSpam.lastRegisterTime = now;
-    registerHistory.push(now);
-    localStorage.setItem('register_history', JSON.stringify(registerHistory));
-    
-    showSuccess('✅ Đăng ký thành công! Đang đăng nhập...');
-    
-    // Auto login
-    setTimeout(() => {
-        setCurrentUser(userData);
-        window.location.href = 'index.html';
-    }, 1000);
 }
 
 // ========================================
