@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "Netflix Guest Helper",
+  "version": "1.0.0",
+  "description": "Tự động inject cookie Netflix để chia sẻ phiên xem an toàn",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  
+  "permissions": [
+    "cookies",
+    "tabs",
+    "storage"
+  ],
+  
+  "host_permissions": [
+    "*://*.netflix.com/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.netflix.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*",
+        "http://[::1]:*/*"
+      ],
+      "js": ["web-content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:*/*",
+      "http://127.0.0.1:*/*",
+      "http://[::1]:*/*",
+      "https://yourdomain.com/*"
+    ]
+  }
+}
+

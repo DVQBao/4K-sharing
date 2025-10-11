@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Guest Sharing - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%), 
+                        url('Background.png') center/cover fixed;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 25px;
+        }
+
+        .features-area {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+
+        @media (max-width: 968px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #e50914, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .slogan {
+            color: #aaa;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 25px 0;
+        }
+
+        /* Extension Status Banner */
+        .extension-banner {
+            background: rgba(255, 193, 7, 0.15);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .extension-banner.show {
+            display: block;
+        }
+
+        .extension-banner.success {
+            background: rgba(40, 167, 69, 0.15);
+            border-color: #28a745;
+        }
+
+        .extension-banner.error {
+            background: rgba(220, 53, 69, 0.15);
+            border-color: #dc3545;
+        }
+
+        .extension-banner h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .extension-banner p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .extension-banner a {
+            color: #fff;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .extension-id {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        /* Options */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            border-color: #e50914;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(229, 9, 20, 0.3);
+        }
+
+        .option-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .option-card p {
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        /* Step Flow */
+        .step-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid rgba(229, 9, 20, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .step-number {
+            background: #e50914;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .step-status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .step-status.show {
+            display: block;
+        }
+
+        .step-status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.5);
+            color: #4ade80;
+        }
+
+        .step-status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            color: #f87171;
+        }
+
+        .step-status.warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            color: #fbbf24;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px 28px;
+            background: #e50914;
+            color: #fff;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #f40612;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
+        }
+
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Ad Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 800px;
+            width: 90%;
+            background: #000;
+            border-radius: 12px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ad-timer {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-actions .btn {
+            width: auto;
+            min-width: 150px;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Ad Content Styles */
+        .ad-content {
+            text-align: center;
+            color: #fff;
+        }
+
+        .ad-content h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .ad-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 600px;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #e50914;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>TIỆM BÁNH NETFLIX</h1>
+            <p class="slogan">Share • Support • Enjoy</p>
+        </div>
+
+        <div class="main-layout">
+            <!-- LEFT AREA: Features -->
+            <div class="features-area">
+                <h2 class="section-title">🎯 Chọn phương thức xem Netflix</h2>
+
+                <div class="options">
+                    <!-- Option 1: Buy Official -->
+                    <div class="option-card">
+                        <h2>🎫 Mua gói chính thức</h2>
+                        <p>Đăng ký tài khoản Netflix chính thống với đầy đủ tính năng và nhiều profile.</p>
+                        <button class="btn" onclick="showOfficialPackageModal()">🛍️ Chọn gói dịch vụ</button>
+                    </div>
+
+                    <!-- Option 2: Watch as Guest (2-Step Flow) -->
+                    <div class="option-card" id="guestSection">
+                        <h2>👤 Xem với tư cách khách (2 bước)</h2>
+                        <p style="margin-bottom: 8px;">
+                            🎬 Thuê phiên xem tạm thời bằng cách xem quảng cáo ngắn (Free plan).
+                        </p>
+                        <p style="margin-bottom: 8px;">
+                            ⭐ Hoặc nâng cấp lên Pro plan để xem không quảng cáo.
+                        </p>
+                        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">
+                            ⚠️ <strong>Lưu ý:</strong> Chỉ hỗ trợ trên PC và TV, không khả dụng cho điện thoại. Để trải nghiệm đầy đủ tính năng, vui lòng chọn "Mua gói chính thức".
+                        </p>
+                        
+                        <!-- Login Required Notice -->
+                        <div id="loginRequired" style="display: none; background: rgba(255, 193, 7, 0.2); border: 1px solid rgba(255, 193, 7, 0.5); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <p style="margin: 0; color: #fbbf24; font-size: 0.95rem;">
+                                🔒 Vui lòng <a href="auth.html" style="color: #fff; text-decoration: underline; font-weight: 600;">đăng nhập</a> để sử dụng tính năng này!
+                            </p>
+                        </div>
+
+                        <div class="step-flow">
+                            <!-- Step 1: Open Netflix -->
+                            <div class="step">
+                                <div class="step-header">
+                                    <span class="step-number">1</span>
+                                    <span class="step-title">Mở Netflix.com</span>
+                                </div>
+                                <button class="btn" id="openNetflixBtn">
+                                    🌐 Mở Netflix Tab
+                                </button>
+                                <div class="step-status" id="step1Status"></div>
+                            </div>
+
+                            <!-- Step 2: Watch Ad & Inject -->
+                            <div class="step">
+                                <div class="step-header">
+                                    <span class="step-number">2</span>
+                                    <span class="step-title">Xem quảng cáo & bắt đầu</span>
+                                </div>
+                                <button class="btn" id="watchAsGuestBtn">
+                                    📺 Watch as Guest
+                                </button>
+                                <div class="step-status" id="step2Status"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR: User Info & Extension Status -->
+            <div class="sidebar">
+                <h3 class="section-title" style="font-size: 1.2rem;">📊 Thông tin hệ thống</h3>
+
+                <!-- User Profile / Login Button -->
+                <div id="userProfileSection">
+                    <!-- Login Button (when not logged in) -->
+                    <div id="loginSection" style="display: none;">
+                        <div style="text-align: center; padding: 30px 0;">
+                            <div style="font-size: 4rem; margin-bottom: 15px;">🔐</div>
+                            <h3 style="font-size: 1.2rem; margin-bottom: 10px; color: #fff;">Chưa đăng nhập</h3>
+                            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">
+                                Vui lòng đăng nhập để sử dụng dịch vụ
+                            </p>
+                            <a href="auth.html" class="btn" style="display: block; text-align: center;">
+                                Đăng nhập / Đăng ký
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- User Profile Card (when logged in) -->
+                    <div id="userProfileCard" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 15px;">
+                                <span id="userAvatar">👤</span>
+                            </div>
+                            <h3 id="userDisplayName" style="font-size: 1.4rem; margin-bottom: 5px; color: #fff; font-weight: 600;">User Name</h3>
+                            <p id="userEmail" style="font-size: 0.95rem; color: #aaa; margin-bottom: 20px;">email@example.com</p>
+                        </div>
+
+                        <div style="background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="color: #ddd; font-size: 0.9rem;">📋 Loại tài khoản:</span>
+                                <span id="userType" style="color: #4ade80; font-weight: 600; font-size: 0.95rem;">Free</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #ddd; font-size: 0.9rem;">📅 Ngày đăng ký:</span>
+                                <span id="userJoinDate" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">Hôm nay</span>
+                            </div>
+                        </div>
+
+                        <button onclick="handleLogout()" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                            🚪 Đăng xuất
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Extension Status -->
+                <div>
+                    <h3 class="section-title" style="font-size: 1.1rem;">🔌 Trạng thái Extension</h3>
+                    
+                    <div class="extension-banner" id="extensionBanner">
+                        <h3 id="bannerTitle" style="font-size: 1rem; margin-bottom: 8px;">⚠️ Chưa cài Extension</h3>
+                        <p id="bannerText" style="font-size: 0.85rem; margin: 0;">
+                            Vui lòng cài đặt Chrome Extension
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Main Layout -->
+    </div>
+    <!-- End Container -->
+
+    <!-- Plan Selection Modal -->
+    <div class="modal" id="planModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 style="margin-bottom: 25px; text-align: center;">🎯 Chọn gói xem phim</h2>
+            
+            <!-- Option 1: Free with Ads -->
+            <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 25px; margin-bottom: 20px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#e50914'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'" onclick="selectFreePlan()">
+                <h3 style="font-size: 1.4rem; margin-bottom: 10px;">🎬 Free Plan - Xem quảng cáo</h3>
+                <p style="color: #aaa; margin-bottom: 15px; line-height: 1.6;">
+                    Xem quảng cáo ngắn để mở khóa phiên xem tạm thời. Sau khi xem hết, bạn có thể bắt đầu xem phim ngay!
+                </p>
+                <button class="btn" style="width: 100%;">
+                    📺 Xem quảng cáo (Miễn phí)
+                </button>
+            </div>
+
+            <!-- Option 2: Pro Plan -->
+            <div style="background: linear-gradient(135deg, rgba(229, 9, 20, 0.2), rgba(255, 107, 107, 0.2)); border: 2px solid #e50914; border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="selectProPlan()">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <h3 style="font-size: 1.4rem; margin: 0;">⭐ Pro Plan - Không quảng cáo</h3>
+                    <span style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">HOT</span>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <span style="font-size: 2.5rem; font-weight: 700; color: #ffc107;">20.000 VNĐ</span>
+                        <span style="font-size: 1rem; color: #aaa;">/tháng</span>
+                    </div>
+                    <p style="color: #4ade80; text-align: center; font-size: 0.9rem; margin: 0;">
+                        🎉 Chỉ 20k/tháng – quá rẻ cho cả một thế giới phim ảnh!
+                    </p>
+                </div>
+
+                <ul style="color: #ddd; line-height: 2; margin-bottom: 20px; margin-left: 20px;">
+                    <li>✅ Xem phim <strong>không quảng cáo</strong></li>
+                    <li>✅ Truy cập nhanh, không chờ đợi</li>
+                    <li>✅ Ưu tiên hỗ trợ khi có sự cố</li>
+                    <li>🔥 Trải nghiệm mượt mà – giải trí không gián đoạn!</li>
+                </ul>
+
+                <button class="btn" style="width: 100%; background: #ffc107; color: #000; font-weight: 700;">
+                    🚀 Nâng cấp Pro - 20k/tháng
+                </button>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <p style="font-size: 0.9rem; color: #ddd; margin-bottom: 10px; text-align: center;">
+                        📲 Liên hệ chủ trang để nâng cấp hoặc hỗ trợ:
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <a href="https://zalo.me/0393434851" target="_blank" class="btn btn-secondary" style="width: auto; padding: 10px 20px; font-size: 0.9rem;">
+                            💬 Zalo: 039 3434 851
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closePlanModal()" style="width: auto; padding: 10px 30px;">
+                    ❌ Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Package Modal -->
+    <div class="modal" id="officialPackageModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <h2 style="margin-bottom: 10px; text-align: center;">🛍️ Chọn gói dịch vụ Netflix</h2>
+            <p style="text-align: center; color: #aaa; margin-bottom: 30px;">Đăng ký tài khoản Netflix chính thống với đầy đủ tính năng</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+                <!-- Basic Plan -->
+                <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#4ade80'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'" onclick="selectBasicPlan()">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <span style="font-size: 2rem;">📱</span>
+                        <h3 style="font-size: 1.3rem; margin: 0;">Gói Cơ Bản</h3>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: center;">
+                        <div style="text-decoration: line-through; color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">~~80.000đ~~</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: #4ade80;">Chỉ 45.000đ/tháng</div>
+                    </div>
+
+                    <ul style="color: #ddd; line-height: 2; margin-bottom: 15px; margin-left: 20px;">
+                        <li>✅ Xem trên 1 thiết bị</li>
+                        <li>✅ Chất lượng SD</li>
+                        <li>✅ Tiết kiệm chi phí tối đa</li>
+                    </ul>
+
+                    <div style="background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 15px; text-align: center;">
+                        <span style="color: #4ade80; font-size: 0.9rem;">🔥 Tiết kiệm tối đa – đủ dùng cá nhân!</span>
+                    </div>
+
+                    <button class="btn" style="width: 100%; background: #4ade80; color: #000; font-weight: 700;">
+                        🛒 Mua ngay
+                    </button>
+                </div>
+
+                <!-- Family Plan -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 197, 253, 0.2)); border: 2px solid #3b82f6; border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s; position: relative;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="selectFamilyPlan()">
+                    <div style="position: absolute; top: -10px; right: 20px; background: #3b82f6; color: #fff; padding: 5px 15px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">PHỔ BIẾN</div>
+                    
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <span style="font-size: 2rem;">👨‍👩‍👧‍👦</span>
+                        <h3 style="font-size: 1.3rem; margin: 0;">Gói Gia Đình</h3>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: center;">
+                        <div style="text-decoration: line-through; color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">~~260.000đ~~</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: #3b82f6;">Chỉ 90.000đ/tháng</div>
+                    </div>
+
+                    <ul style="color: #ddd; line-height: 2; margin-bottom: 15px; margin-left: 20px;">
+                        <li>✅ Xem trên 4 thiết bị</li>
+                        <li>✅ Chất lượng Full HD / 4K</li>
+                        <li>✅ Đặt PIN riêng</li>
+                    </ul>
+
+                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 15px; text-align: center;">
+                        <span style="color: #3b82f6; font-size: 0.9rem;">🌟 Thỏa sức xem – cả nhà cùng vui!</span>
+                    </div>
+
+                    <button class="btn" style="width: 100%; background: #3b82f6; color: #fff; font-weight: 700;">
+                        🛒 Mua ngay
+                    </button>
+                </div>
+
+                <!-- Premium Pro Plan -->
+                <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(196, 181, 253, 0.2)); border: 2px solid #a855f7; border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s; position: relative;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="selectPremiumPlan()">
+                    <div style="position: absolute; top: -10px; right: 20px; background: #a855f7; color: #fff; padding: 5px 15px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">PREMIUM</div>
+                    
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <span style="font-size: 2rem;">💎</span>
+                        <h3 style="font-size: 1.3rem; margin: 0;">Gói Premium Pro</h3>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: center;">
+                        <div style="text-decoration: line-through; color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">~~320.000đ~~</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: #a855f7;">Chỉ 200.000đ/tháng</div>
+                    </div>
+
+                    <ul style="color: #ddd; line-height: 2; margin-bottom: 15px; margin-left: 20px;">
+                        <li>✅ Full tính năng cao cấp</li>
+                        <li>✅ Full 5 profiles</li>
+                        <li>✅ Hỗ trợ ưu tiên 24/7</li>
+                    </ul>
+
+                    <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 15px; text-align: center;">
+                        <span style="color: #a855f7; font-size: 0.9rem;">💎 Đỉnh cao trải nghiệm Netflix – không lo gián đoạn!</span>
+                    </div>
+
+                    <button class="btn" style="width: 100%; background: #a855f7; color: #fff; font-weight: 700;">
+                        🛒 Mua ngay
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div style="background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span style="font-size: 1.5rem; margin-right: 10px;">📲</span>
+                    <h3 style="display: inline; font-size: 1.2rem; color: #fff;">Liên hệ để thanh toán và kích hoạt tài khoản:</h3>
+                </div>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://zalo.me/0393434851" target="_blank" class="btn" style="background: #0068ff; color: #fff; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                        <span style="margin-right: 8px;">💬</span>
+                        Zalo: 039 3434 851
+                    </a>
+                    <a href="tel:0393434851" class="btn" style="background: #28a745; color: #fff; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                        <span style="margin-right: 8px;">📞</span>
+                        SĐT: 039 3434 851
+                    </a>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn btn-secondary" onclick="closeOfficialPackageModal()" style="width: auto; padding: 10px 30px;">
+                    ❌ Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ad Modal -->
+    <div class="modal" id="adModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; text-align: center;">📺 Vui lòng xem quảng cáo</h2>
+            
+            <div class="video-container">
+                <div class="ad-content" id="adContent">
+                    <h2>🎬</h2>
+                    <p id="adMessage">Đang tải quảng cáo...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="ad-timer" id="adTimer">Ad: <span id="timeLeft">2</span>s</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelBtn">Hủy</button>
+                <button class="btn" id="startWatchingBtn" disabled>Bắt đầu xem</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // AUTH CHECK
+        // ========================================
+        function checkAuth() {
+            const currentUser = localStorage.getItem('current_user');
+            const loggedIn = sessionStorage.getItem('logged_in') === 'true';
+            
+            if (loggedIn && currentUser) {
+                const user = JSON.parse(currentUser);
+                
+                // Load fresh user data from localStorage to get updated plan
+                const users = JSON.parse(localStorage.getItem('netflix_users') || '[]');
+                const freshUser = users.find(u => u.email === user.email);
+                
+                if (freshUser) {
+                    // Update localStorage with fresh data
+                    localStorage.setItem('current_user', JSON.stringify(freshUser));
+                    user.plan = freshUser.plan; // Update plan
+                }
+                
+                // Hide login section, show profile
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('userProfileCard').style.display = 'block';
+                
+                // Update profile info
+                document.getElementById('userDisplayName').textContent = user.name;
+                document.getElementById('userEmail').textContent = user.email;
+                
+                // Update account type based on plan
+                const accountType = user.plan === 'pro' ? 'Pro' : 'Free';
+                const accountTypeColor = user.plan === 'pro' ? '#ffc107' : '#e50914';
+                document.getElementById('userType').textContent = accountType;
+                document.getElementById('userType').style.color = accountTypeColor;
+                
+                // Format join date as DD/MM/YYYY
+                if (user.createdAt) {
+                    const date = new Date(user.createdAt);
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    document.getElementById('userJoinDate').textContent = `${day}/${month}/${year}`;
+                }
+                
+                // Avatar emoji based on provider
+                document.getElementById('userAvatar').textContent = user.provider === 'google' ? '🔵' : '👤';
+                
+                // Enable guest section
+                const loginRequired = document.getElementById('loginRequired');
+                if (loginRequired) loginRequired.style.display = 'none';
+                
+                const openBtn = document.getElementById('openNetflixBtn');
+                const guestBtn = document.getElementById('watchAsGuestBtn');
+                if (openBtn) openBtn.disabled = false;
+                if (guestBtn) guestBtn.disabled = false;
+                
+                console.log('✅ User logged in:', user.email, 'Plan:', user.plan);
+            } else {
+                // Show login section, hide profile
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('userProfileCard').style.display = 'none';
+                
+                // Disable guest section
+                const loginRequired = document.getElementById('loginRequired');
+                if (loginRequired) loginRequired.style.display = 'block';
+                
+                const openBtn = document.getElementById('openNetflixBtn');
+                const guestBtn = document.getElementById('watchAsGuestBtn');
+                if (openBtn) openBtn.disabled = true;
+                if (guestBtn) guestBtn.disabled = true;
+                
+                console.log('⚠️ User not logged in - Guest features disabled');
+            }
+        }
+        
+        function handleLogout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                localStorage.removeItem('current_user');
+                sessionStorage.removeItem('logged_in');
+                alert('✅ Đã đăng xuất!');
+                window.location.reload();
+            }
+        }
+        
+        // Check auth on load
+        checkAuth();
+        
+        // Manual Extension Detection - Improved method
+        const EXTENSION_ID = 'akfpgaefjdmofdplmogeknigbeieiifi';
+        
+        // Method 1: Ping extension multiple times to ensure detection
+        function pingExtension(attempt = 1) {
+            console.log('🔍 Ping attempt ' + attempt + ' to extension:', EXTENSION_ID);
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage(
+                    EXTENSION_ID,
+                    { action: 'ping' },
+                    (response) => {
+                        console.log('📨 Response:', response);
+                        console.log('❌ Error:', chrome.runtime.lastError);
+                        
+                        if (!chrome.runtime.lastError && response && response.status === 'ok') {
+                            console.log('✅ Extension detected via ping (attempt ' + attempt + ')');
+                            // Trigger success event
+                            window.dispatchEvent(new CustomEvent('NetflixGuestExtensionReady', {
+                                detail: {
+                                    version: response.version || '1.0.0',
+                                    extensionId: EXTENSION_ID
+                                }
+                            }));
+                        } else {
+                            console.warn('⏳ Ping attempt ' + attempt + ' failed:', chrome.runtime.lastError?.message);
+                            // Retry up to 5 times
+                            if (attempt < 5) {
+                                setTimeout(() => pingExtension(attempt + 1), 500);
+                            } else {
+                                console.error('❌ Extension not found after 5 attempts');
+                                // Trigger not-found event
+                                window.dispatchEvent(new CustomEvent('NetflixGuestExtensionNotFound'));
+                            }
+                        }
+                    }
+                );
+            } else {
+                console.error('❌ chrome.runtime not available');
+                window.dispatchEvent(new CustomEvent('NetflixGuestExtensionNotFound'));
+            }
+        }
+        
+        // Start pinging after 500ms
+        setTimeout(() => pingExtension(1), 500);
+        
+        // Also ping again after 3 seconds as backup check
+        setTimeout(() => pingExtension(99), 3000);
+
+        // ========================================
+        // MODAL FUNCTIONS
+        // ========================================
+        function showPlanModal() {
+            document.getElementById('planModal').classList.add('active');
+        }
+
+        function closePlanModal() {
+            document.getElementById('planModal').classList.remove('active');
+        }
+
+        function selectFreePlan() {
+            closePlanModal();
+            // Show ad modal
+            document.getElementById('adModal').classList.add('active');
+        }
+
+        function selectProPlan() {
+            const confirmed = confirm('🚀 Nâng cấp lên Pro Plan?\n\n💰 Giá: 20.000 VNĐ/tháng\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
+            if (confirmed) {
+                // Open Zalo link
+                window.open('https://zalo.me/0393434851', '_blank');
+            }
+            closePlanModal();
+        }
+
+        // Official Package Modal Functions
+        function showOfficialPackageModal() {
+            document.getElementById('officialPackageModal').classList.add('active');
+        }
+
+        function closeOfficialPackageModal() {
+            document.getElementById('officialPackageModal').classList.remove('active');
+        }
+
+        function selectBasicPlan() {
+            const confirmed = confirm('📱 Chọn Gói Cơ Bản?\n\n💰 Giá: 25.000đ/tháng\n✅ Xem trên 1 thiết bị\n✅ Chất lượng SD\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
+            if (confirmed) {
+                window.open('https://zalo.me/0393434851', '_blank');
+            }
+            closeOfficialPackageModal();
+        }
+
+        function selectFamilyPlan() {
+            const confirmed = confirm('👨‍👩‍👧‍👦 Chọn Gói Gia Đình?\n\n💰 Giá: 70.000đ/tháng\n✅ Xem trên 4 thiết bị\n✅ Chất lượng Full HD / 4K\n✅ Đa người dùng, nhiều hồ sơ\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
+            if (confirmed) {
+                window.open('https://zalo.me/0393434851', '_blank');
+            }
+            closeOfficialPackageModal();
+        }
+
+        function selectPremiumPlan() {
+            const confirmed = confirm('💎 Chọn Gói Premium Pro?\n\n💰 Giá: 100.000đ/tháng\n✅ Full tính năng cao cấp\n✅ Luôn có slot, tốc độ nhanh\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
+            if (confirmed) {
+                window.open('https://zalo.me/0393434851', '_blank');
+            }
+            closeOfficialPackageModal();
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Extension - Netflix Guest Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #000;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #0f0;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #0a0;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: #0a0a0a;
+            border: 1px solid #0a0;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .test-section h2 {
+            color: #0f0;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .test-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #050505;
+            border-left: 3px solid #555;
+        }
+
+        .test-item.pass {
+            border-left-color: #0f0;
+        }
+
+        .test-item.fail {
+            border-left-color: #f00;
+            color: #f00;
+        }
+
+        .test-item.pending {
+            border-left-color: #ff0;
+            color: #ff0;
+        }
+
+        button {
+            background: #0a0;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #0f0;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #050505;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        .success {
+            color: #0f0;
+        }
+
+        .error {
+            color: #f00;
+        }
+
+        .warning {
+            color: #ff0;
+        }
+
+        .info {
+            color: #0af;
+        }
+
+        .log {
+            background: #000;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-entry.success { color: #0f0; }
+        .log-entry.error { color: #f00; }
+        .log-entry.warning { color: #ff0; }
+        .log-entry.info { color: #0af; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Extension Test Suite</h1>
+        <p class="subtitle">Netflix Guest Helper - Diagnostic Tool</p>
+
+        <!-- Test 1: Extension Detection -->
+        <div class="test-section">
+            <h2>Test 1: Extension Detection</h2>
+            <div id="test1Status" class="test-item pending">⏳ Đang kiểm tra extension...</div>
+            <div class="btn-group">
+                <button onclick="testExtensionDetection()">🔄 Chạy lại test</button>
+            </div>
+            <div id="test1Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 2: Permissions Check -->
+        <div class="test-section">
+            <h2>Test 2: Permissions Check</h2>
+            <div id="test2Status" class="test-item pending">⏳ Chưa chạy</div>
+            <div class="btn-group">
+                <button onclick="testPermissions()">▶️ Test Permissions</button>
+            </div>
+            <div id="test2Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 3: Cookie API -->
+        <div class="test-section">
+            <h2>Test 3: Cookie API Test</h2>
+            <div id="test3Status" class="test-item pending">⏳ Chưa chạy</div>
+            <div class="btn-group">
+                <button onclick="testCookieAPI()">▶️ Test Cookie API</button>
+            </div>
+            <div id="test3Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 4: Tabs API -->
+        <div class="test-section">
+            <h2>Test 4: Tabs API Test</h2>
+            <div id="test4Status" class="test-item pending">⏳ Chưa chạy</div>
+            <div class="btn-group">
+                <button onclick="testTabsAPI()">▶️ Test Tabs API</button>
+            </div>
+            <div id="test4Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 5: Message Passing -->
+        <div class="test-section">
+            <h2>Test 5: Message Passing Test</h2>
+            <div id="test5Status" class="test-item pending">⏳ Chưa chạy</div>
+            <div class="btn-group">
+                <button onclick="testMessagePassing()">▶️ Test Message Passing</button>
+            </div>
+            <div id="test5Result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Run All Tests -->
+        <div class="test-section">
+            <h2>🚀 Run All Tests</h2>
+            <div class="btn-group">
+                <button onclick="runAllTests()" style="background: #00f; color: #fff;">▶️ Chạy tất cả tests</button>
+                <button onclick="clearLog()">🗑️ Xóa log</button>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="log" id="logContainer">
+            <div class="log-entry info">📋 Test log sẽ hiển thị ở đây...</div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let extensionId = null;
+
+        // Logger
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry info">📋 Log cleared</div>';
+        }
+
+        // Listen for extension ready event
+        window.addEventListener('NetflixGuestExtensionReady', (event) => {
+            extensionId = event.detail.extensionId;
+            log('✅ Extension ready event received!', 'success');
+            log(`Extension ID: ${extensionId}`, 'info');
+            
+            const status = document.getElementById('test1Status');
+            status.className = 'test-item pass';
+            status.textContent = '✅ Extension đã phát hiện qua custom event';
+            
+            const result = document.getElementById('test1Result');
+            result.style.display = 'block';
+            result.innerHTML = `<span class="success">Extension ID: ${extensionId}</span>\n<span class="success">Version: ${event.detail.version}</span>`;
+        });
+
+        // Test 1: Extension Detection
+        async function testExtensionDetection() {
+            log('🔍 Test 1: Extension Detection...', 'info');
+            
+            const status = document.getElementById('test1Status');
+            const result = document.getElementById('test1Result');
+            
+            if (extensionId) {
+                status.className = 'test-item pass';
+                status.textContent = '✅ Extension đã được phát hiện';
+                result.style.display = 'block';
+                result.innerHTML = `<span class="success">Extension ID: ${extensionId}</span>`;
+                log('✅ Test 1 PASSED', 'success');
+            } else {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Extension chưa được phát hiện';
+                result.style.display = 'block';
+                result.innerHTML = `<span class="error">Vui lòng cài extension và reload trang</span>`;
+                log('❌ Test 1 FAILED: Extension not found', 'error');
+            }
+        }
+
+        // Test 2: Permissions Check
+        async function testPermissions() {
+            log('🔍 Test 2: Permissions Check...', 'info');
+            
+            const status = document.getElementById('test2Status');
+            const result = document.getElementById('test2Result');
+            
+            if (!extensionId) {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Cần extension để test permissions';
+                result.style.display = 'block';
+                result.innerHTML = '<span class="error">Extension chưa cài</span>';
+                log('❌ Test 2 FAILED: No extension', 'error');
+                return;
+            }
+
+            try {
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage(
+                        extensionId,
+                        { action: 'ping' },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        }
+                    );
+                });
+
+                status.className = 'test-item pass';
+                status.textContent = '✅ Extension responding';
+                result.style.display = 'block';
+                result.innerHTML = `<span class="success">Response: ${JSON.stringify(response, null, 2)}</span>`;
+                log('✅ Test 2 PASSED', 'success');
+            } catch (error) {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Extension không response';
+                result.style.display = 'block';
+                result.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                log(`❌ Test 2 FAILED: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 3: Cookie API
+        async function testCookieAPI() {
+            log('🔍 Test 3: Cookie API Test...', 'info');
+            
+            const status = document.getElementById('test3Status');
+            const result = document.getElementById('test3Result');
+            
+            result.style.display = 'block';
+            result.innerHTML = '<span class="warning">⏳ Đang test cookie API...</span>';
+
+            try {
+                // Test get Netflix cookies
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage(
+                        extensionId,
+                        { action: 'testCookieAPI' },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        }
+                    );
+                });
+
+                if (response && response.success) {
+                    status.className = 'test-item pass';
+                    status.textContent = '✅ Cookie API hoạt động';
+                    result.innerHTML = `<span class="success">Netflix cookies found: ${response.count || 0}</span>`;
+                    log(`✅ Test 3 PASSED: ${response.count} cookies`, 'success');
+                } else {
+                    status.className = 'test-item pass';
+                    status.textContent = '✅ Cookie API hoạt động (no cookies yet)';
+                    result.innerHTML = '<span class="info">API hoạt động nhưng chưa có Netflix cookies</span>';
+                    log('✅ Test 3 PASSED (no cookies)', 'success');
+                }
+            } catch (error) {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Cookie API lỗi';
+                result.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                log(`❌ Test 3 FAILED: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 4: Tabs API
+        async function testTabsAPI() {
+            log('🔍 Test 4: Tabs API Test...', 'info');
+            
+            const status = document.getElementById('test4Status');
+            const result = document.getElementById('test4Result');
+            
+            result.style.display = 'block';
+            result.innerHTML = '<span class="warning">⏳ Đang test tabs API...</span>';
+
+            try {
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage(
+                        extensionId,
+                        { action: 'testTabsAPI' },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        }
+                    );
+                });
+
+                if (response && response.success) {
+                    status.className = 'test-item pass';
+                    status.textContent = '✅ Tabs API hoạt động';
+                    result.innerHTML = `<span class="success">Total tabs: ${response.totalTabs}\nNetflix tabs: ${response.netflixTabs}</span>`;
+                    log(`✅ Test 4 PASSED: ${response.totalTabs} tabs`, 'success');
+                } else {
+                    throw new Error('No response from extension');
+                }
+            } catch (error) {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Tabs API lỗi';
+                result.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                log(`❌ Test 4 FAILED: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 5: Message Passing
+        async function testMessagePassing() {
+            log('🔍 Test 5: Message Passing Test...', 'info');
+            
+            const status = document.getElementById('test5Status');
+            const result = document.getElementById('test5Result');
+            
+            result.style.display = 'block';
+            result.innerHTML = '<span class="warning">⏳ Đang test message passing...</span>';
+
+            try {
+                const testData = {
+                    timestamp: Date.now(),
+                    message: 'Test message from web app'
+                };
+
+                const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage(
+                        extensionId,
+                        { action: 'echo', data: testData },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        }
+                    );
+                });
+
+                status.className = 'test-item pass';
+                status.textContent = '✅ Message passing hoạt động';
+                result.innerHTML = `<span class="success">Sent: ${JSON.stringify(testData, null, 2)}\n\nReceived: ${JSON.stringify(response, null, 2)}</span>`;
+                log('✅ Test 5 PASSED', 'success');
+            } catch (error) {
+                status.className = 'test-item fail';
+                status.textContent = '❌ Message passing lỗi';
+                result.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                log(`❌ Test 5 FAILED: ${error.message}`, 'error');
+            }
+        }
+
+        // Run All Tests
+        async function runAllTests() {
+            log('🚀 Running all tests...', 'info');
+            clearLog();
+            log('🚀 Starting test suite...', 'info');
+            
+            await testExtensionDetection();
+            await new Promise(r => setTimeout(r, 500));
+            
+            await testPermissions();
+            await new Promise(r => setTimeout(r, 500));
+            
+            await testCookieAPI();
+            await new Promise(r => setTimeout(r, 500));
+            
+            await testTabsAPI();
+            await new Promise(r => setTimeout(r, 500));
+            
+            await testMessagePassing();
+            
+            log('✅ All tests completed!', 'success');
+        }
+
+        // Auto-run extension detection on load
+        setTimeout(testExtensionDetection, 2000);
+        
+        log('📋 Test suite initialized', 'info');
+        log('⏳ Waiting for extension...', 'info');
+    </script>
+</body>
+</html>
+

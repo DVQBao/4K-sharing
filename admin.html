@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - TIỆM BÁNH NETFLIX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%), 
+                        url('Background.png') center/cover fixed;
+            color: #fff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e50914, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            color: #e50914;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .user-table {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(229, 9, 20, 0.3);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-free {
+            background: rgba(255, 255, 255, 0.2);
+            color: #aaa;
+        }
+
+        .badge-pro {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .badge-google {
+            background: #4285f4;
+            color: #fff;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #e50914;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #f40612;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            color: #e50914;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Admin Panel</h1>
+        <p class="subtitle">Quản lý người dùng - TIỆM BÁNH NETFLIX</p>
+
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="totalUsers">0</h3>
+                <p>Tổng người dùng</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="freeUsers">0</h3>
+                <p>Free Plan</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="proUsers">0</h3>
+                <p>Pro Plan</p>
+            </div>
+        </div>
+
+        <!-- User Table -->
+        <div class="user-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Email</th>
+                        <th>Loại TK</th>
+                        <th>Plan</th>
+                        <th>Ngày đăng ký</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #aaa; padding: 40px;">
+                            Chưa có người dùng nào
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">← Quay lại trang chủ</a>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // ADMIN PANEL LOGIC
+        // ========================================
+
+        // Load users
+        function loadUsers() {
+            const users = JSON.parse(localStorage.getItem('netflix_users') || '[]');
+            const tbody = document.getElementById('userTableBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #aaa; padding: 40px;">
+                            Chưa có người dùng nào
+                        </td>
+                    </tr>
+                `;
+                updateStats(users);
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            users.forEach((user, index) => {
+                const row = document.createElement('tr');
+                
+                const date = new Date(user.createdAt);
+                const dateStr = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+                
+                const isPro = user.plan === 'pro';
+                const planBadge = isPro 
+                    ? '<span class="badge badge-pro">⭐ PRO</span>' 
+                    : '<span class="badge badge-free">FREE</span>';
+                
+                const providerBadge = user.provider === 'google'
+                    ? '<span class="badge badge-google">Google</span>'
+                    : '<span class="badge badge-free">Local</span>';
+                
+                row.innerHTML = `
+                    <td><strong>${user.name}</strong></td>
+                    <td>${user.email}</td>
+                    <td>${providerBadge}</td>
+                    <td>${planBadge}</td>
+                    <td>${dateStr}</td>
+                    <td>
+                        ${!isPro ? `<button class="btn btn-small btn-success" onclick="upgradeToPro('${user.email}')">⭐ Nâng Pro</button>` : ''}
+                        ${isPro ? `<button class="btn btn-small" onclick="downgradeToFree('${user.email}')">⬇️ Hạ Free</button>` : ''}
+                        <button class="btn btn-small btn-danger" onclick="deleteUser('${user.email}')">🗑️ Xóa</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            updateStats(users);
+        }
+
+        // Update statistics
+        function updateStats(users) {
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('freeUsers').textContent = users.filter(u => u.plan !== 'pro').length;
+            document.getElementById('proUsers').textContent = users.filter(u => u.plan === 'pro').length;
+        }
+
+        // Upgrade user to Pro
+        function upgradeToPro(email) {
+            const confirmed = confirm(`⭐ Nâng cấp tài khoản lên Pro?\n\nEmail: ${email}\nGói: Pro (20.000 VNĐ/tháng)`);
+            
+            if (!confirmed) return;
+            
+            const users = JSON.parse(localStorage.getItem('netflix_users') || '[]');
+            const user = users.find(u => u.email === email);
+            
+            if (user) {
+                user.plan = 'pro';
+                user.upgradedAt = new Date().toISOString();
+                localStorage.setItem('netflix_users', JSON.stringify(users));
+                
+                console.log('✅ Upgraded to Pro:', email);
+                alert('✅ Đã nâng cấp lên Pro thành công!');
+                loadUsers();
+            }
+        }
+
+        // Downgrade user to Free
+        function downgradeToFree(email) {
+            const confirmed = confirm(`⬇️ Hạ cấp tài khoản xuống Free?\n\nEmail: ${email}`);
+            
+            if (!confirmed) return;
+            
+            const users = JSON.parse(localStorage.getItem('netflix_users') || '[]');
+            const user = users.find(u => u.email === email);
+            
+            if (user) {
+                user.plan = 'free';
+                delete user.upgradedAt;
+                localStorage.setItem('netflix_users', JSON.stringify(users));
+                
+                console.log('⬇️ Downgraded to Free:', email);
+                alert('✅ Đã hạ cấp xuống Free!');
+                loadUsers();
+            }
+        }
+
+        // Delete user
+        function deleteUser(email) {
+            const confirmed = confirm(`🗑️ Xóa tài khoản?\n\nEmail: ${email}\n\n⚠️ Hành động này không thể hoàn tác!`);
+            
+            if (!confirmed) return;
+            
+            let users = JSON.parse(localStorage.getItem('netflix_users') || '[]');
+            users = users.filter(u => u.email !== email);
+            localStorage.setItem('netflix_users', JSON.stringify(users));
+            
+            console.log('🗑️ Deleted user:', email);
+            alert('✅ Đã xóa tài khoản!');
+            loadUsers();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('⚙️ Admin panel loaded');
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
+
