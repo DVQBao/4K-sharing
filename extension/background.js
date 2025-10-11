@@ -105,6 +105,43 @@ chrome.runtime.onMessageExternal.addListener(
             return true; // Keep channel open for async response
         }
         
+        // Handle refreshNetflixTab request
+        if (request.action === 'refreshNetflixTab') {
+            (async () => {
+                try {
+                    // Find Netflix tab
+                    const tabs = await chrome.tabs.query({
+                        url: 'https://www.netflix.com/*'
+                    });
+                    
+                    if (tabs.length === 0) {
+                        sendResponse({ 
+                            success: false, 
+                            error: 'No Netflix tab found' 
+                        });
+                        return;
+                    }
+                    
+                    const netflixTab = tabs[0];
+                    
+                    // Reload the tab
+                    await chrome.tabs.reload(netflixTab.id);
+                    console.log('🔄 Netflix tab refreshed');
+                    
+                    sendResponse({ success: true });
+                    
+                } catch (error) {
+                    console.error('❌ Refresh Netflix tab error:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message 
+                    });
+                }
+            })();
+            
+            return true; // Keep channel open for async response
+        }
+        
         // Handle checkNetflixStatus request
         if (request.action === 'checkNetflixStatus') {
             (async () => {

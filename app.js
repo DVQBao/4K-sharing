@@ -717,6 +717,7 @@ Extension ID sẽ hiện ở banner màu xanh khi cài thành công.
 window.injectCookieViaExtension = injectCookieViaExtension;
 window.state = state;
 window.CONFIG = CONFIG;
+window.showStepStatus = showStepStatus;
 
 console.log(`
 ╔════════════════════════════════════════════════════╗

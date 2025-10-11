@@ -194,6 +194,20 @@ class CookieRetryHandler {
                 if (response.loginStatus === 'success') {
                     return { success: true };
                 } else if (response.loginStatus === 'error') {
+                    console.log(`🔄 Detected error: ${response.errorCode}, trying refresh...`);
+                    
+                    // Update progress to show we're refreshing
+                    if (window.showStepStatus) {
+                        window.showStepStatus(2, 'warning', `🔄 Phát hiện lỗi ${response.errorCode}, đang refresh trang...`);
+                    }
+                    
+                    // Try refresh page first before marking cookie as dead
+                    const refreshResult = await this.refreshAndRecheck();
+                    if (refreshResult.success) {
+                        return { success: true };
+                    }
+                    
+                    // Still failed after refresh
                     return {
                         success: false,
                         errorCode: response.errorCode || 'NETFLIX_ERROR'
@@ -225,6 +239,56 @@ class CookieRetryHandler {
                 success: false,
                 errorCode: 'CHECK_FAILED',
                 error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Refresh Netflix page and recheck status
+     */
+    async refreshAndRecheck() {
+        try {
+            console.log('🔄 Refreshing Netflix page...');
+            
+            // Send refresh command to extension
+            const refreshResponse = await chrome.runtime.sendMessage(
+                window.CONFIG.EXTENSION_ID,
+                { action: 'refreshNetflixTab' }
+            );
+            
+            if (!refreshResponse?.success) {
+                console.warn('⚠️ Failed to refresh Netflix tab');
+                return { success: false, errorCode: 'REFRESH_FAILED' };
+            }
+            
+            // Wait for page to load
+            console.log('⏳ Waiting for page to reload...');
+            await this.sleep(5000); // Wait 5 seconds for page to fully load
+            
+            // Check status again
+            console.log('🔍 Checking status after refresh...');
+            const response = await chrome.runtime.sendMessage(
+                window.CONFIG.EXTENSION_ID,
+                { action: 'checkNetflixStatus' }
+            );
+            
+            if (response && response.success && response.loginStatus === 'success') {
+                console.log('✅ Success after refresh!');
+                return { success: true };
+            }
+            
+            console.log('❌ Still failed after refresh');
+            return { 
+                success: false, 
+                errorCode: response?.errorCode || 'STILL_FAILED_AFTER_REFRESH' 
+            };
+            
+        } catch (error) {
+            console.error('❌ Refresh and recheck error:', error);
+            return { 
+                success: false, 
+                errorCode: 'REFRESH_ERROR',
+                error: error.message 
             };
         }
     }
