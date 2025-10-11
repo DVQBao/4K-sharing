@@ -5,7 +5,6 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
 // ========================================
 // ADMIN CREDENTIALS (Hardcoded for security)
@@ -13,7 +12,7 @@ const bcrypt = require('bcryptjs');
 
 const ADMIN_CREDENTIALS = {
     username: 'TiembanhNetflix',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: admin123
+    password: 'admin123', // plain text tạm thời
     role: 'admin'
 };
 
@@ -21,7 +20,7 @@ const ADMIN_CREDENTIALS = {
 // POST /api/admin/login - Admin Login
 // ========================================
 
-router.post('/login', async (req, res) => {
+router.post('/login', (req, res) => {
     try {
         const { username, password } = req.body;
         
@@ -35,9 +34,8 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        // Check password
-        const isMatch = await bcrypt.compare(password, ADMIN_CREDENTIALS.password);
-        if (!isMatch) {
+        // Check password (plain text)
+        if (password !== ADMIN_CREDENTIALS.password) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
