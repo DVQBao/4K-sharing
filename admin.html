@@ -148,6 +148,26 @@
         .btn-warning:hover {
             background: #e0a800;
         }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            height: 12px;
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
 
         .search-box {
             flex: 1;
@@ -887,31 +907,32 @@
             }
 
             let tableHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">STT</th>
-                            <th style="width: 120px;">Tên</th>
-                            <th style="width: 180px;">Email</th>
-                            <th style="width: 120px;">🔑 Mật khẩu</th>
-                            <th style="width: 80px;">Gói</th>
-                            <th style="width: 100px;">Cookie #</th>
-                            <th style="width: 120px;">🌐 IP</th>
-                            <th style="width: 150px;">🖥️ Thiết bị</th>
-                            <th style="width: 150px;">🌍 Vị trí</th>
-                            <th style="width: 100px;">Ngày tạo</th>
-                            <th style="width: 100px;">Hết hạn Pro</th>
-                            <th style="width: 100px;">Đăng nhập cuối</th>
-                            <th style="width: 150px;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div style="overflow-x: auto; width: 100%;">
+                    <table class="table" style="min-width: 1800px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 150px; position: sticky; left: 0; background: white; z-index: 10;">Thao tác</th>
+                                <th style="width: 40px;">No.</th>
+                                <th style="width: 200px;">Name</th>
+                                <th style="width: 180px;">Email</th>
+                                <th style="width: 120px;">Password</th>
+                                <th style="width: 120px;">Plan</th>
+                                <th style="width: 150px;">Cookie No.</th>
+                                <th style="width: 150px;">IP</th>
+                                <th style="width: 150px;">Device</th>
+                                <th style="width: 150px;">Location</th>
+                                <th style="width: 100px;">Reg.date</th>
+                                <th style="width: 100px;">Pro Exp.</th>
+                                <th style="width: 100px;">Last login</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             users.forEach((user, index) => {
                 const createdAt = new Date(user.createdAt).toLocaleDateString('vi-VN');
                 const proExpires = user.proExpiresAt ? new Date(user.proExpiresAt).toISOString().split('T')[0] : '';
-                const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập';
+                const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'No login';
                 
                 // Cookie info
                 let cookieNumber = '-';
@@ -929,6 +950,14 @@
 
                 tableHTML += `
                     <tr data-user-id="${user._id}" id="row-${user._id}">
+                        <td style="position: sticky; left: 0; background: white; z-index: 5;">
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="btn btn-primary btn-sm edit-btn" onclick="enableEditRow('${user._id}')">EDIT</button>
+                                <button class="btn btn-success btn-sm save-btn" onclick="saveUserRow('${user._id}')" style="display: none;">SUBMIT</button>
+                                <button class="btn btn-secondary btn-sm cancel-btn" onclick="cancelEditRow('${user._id}')" style="display: none;">CANCEL</button>
+                                <button class="btn btn-danger btn-sm delete-btn" onclick="deleteUser('${user._id}')">DELETE</button>
+                            </div>
+                        </td>
                         <td>${index + 1}</td>
                         <td>
                             <span class="view-mode">${user.name}</span>
@@ -964,14 +993,6 @@
                             <input type="date" class="edit-mode" value="${proExpires}" style="display: none; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
                         </td>
                         <td>${lastLogin}</td>
-                        <td>
-                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                <button class="btn btn-primary btn-sm edit-btn" onclick="enableEditRow('${user._id}')">✏️ Sửa</button>
-                                <button class="btn btn-success btn-sm save-btn" onclick="saveUserRow('${user._id}')" style="display: none;">💾 Lưu</button>
-                                <button class="btn btn-secondary btn-sm cancel-btn" onclick="cancelEditRow('${user._id}')" style="display: none;">❌ Hủy</button>
-                                <button class="btn btn-danger btn-sm delete-btn" onclick="deleteUser('${user._id}')">🗑️</button>
-                            </div>
-                        </td>
                     </tr>
                 `;
             });
@@ -979,6 +1000,7 @@
             tableHTML += `
                     </tbody>
                 </table>
+                </div>
             `;
 
             tableContainer.innerHTML = tableHTML;
