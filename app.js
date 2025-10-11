@@ -281,10 +281,21 @@ function handleWatchAsGuest() {
     if (currentUser) {
         const user = JSON.parse(currentUser);
         if (user.plan === 'pro') {
-            // User Pro: Xem luôn không cần quảng cáo
+            // User Pro: Mở modal và xem luôn không cần quảng cáo
             console.log('⭐ Pro user - skipping ad, starting directly');
             showToast('⭐ Pro user - Bắt đầu xem ngay!', 'success');
-            handleStartWatching();
+            
+            // Mở modal trước để có UI cho progress
+            openAdModal();
+            
+            // Ẩn phần quảng cáo và hiện trực tiếp bước 2
+            elements.adSection.style.display = 'none';
+            elements.watchingSection.style.display = 'block';
+            
+            // Bắt đầu xem ngay
+            setTimeout(() => {
+                handleStartWatching();
+            }, 500);
             return;
         }
     }
@@ -441,6 +452,23 @@ async function handleStartWatching() {
             showToast('Cần cài extension để login', 'error');
             closeAdModal();
             return;
+        }
+        
+        // Bước 1: Mở Netflix tab
+        showStepStatus(2, 'success', '🌐 Đang mở Netflix...');
+        
+        if (!state.netflixTabRef || state.netflixTabRef.closed) {
+            console.log('🌐 Opening Netflix tab...');
+            state.netflixTabRef = window.open('https://www.netflix.com/login', '_blank');
+            
+            if (!state.netflixTabRef) {
+                showStepStatus(2, 'error', '❌ Không thể mở Netflix. Vui lòng tắt popup blocker.');
+                showToast('Không thể mở Netflix tab', 'error');
+                return;
+            }
+            
+            // Đợi tab load
+            await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         // Tạo retry handler
