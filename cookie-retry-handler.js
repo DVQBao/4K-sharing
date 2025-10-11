@@ -144,22 +144,36 @@ class CookieRetryHandler {
      */
     async injectCookieAndCheck(cookieData) {
         try {
+            console.log('🍪 Starting inject cookie process...');
+            console.log('🍪 Cookie data:', {
+                cookieNumber: cookieData.cookieNumber,
+                name: cookieData.name,
+                domain: cookieData.domain
+            });
+            
             // Use existing injectCookieViaExtension function from app.js
             if (typeof window.injectCookieViaExtension !== 'function') {
+                console.error('❌ injectCookieViaExtension function not found!');
                 throw new Error('injectCookieViaExtension function not available');
             }
             
+            console.log('📤 Calling injectCookieViaExtension...');
             const response = await window.injectCookieViaExtension(cookieData);
+            console.log('📥 Injection response:', response);
             
             if (!response || !response.success) {
+                console.error('❌ Injection failed:', response);
                 throw new Error(response?.error || 'Extension injection failed');
             }
             
+            console.log('✅ Cookie injected successfully, waiting 3s...');
             // Wait for Netflix to process cookie
             await this.sleep(3000);
             
+            console.log('🔍 Checking login status...');
             // Check login status via extension
             const loginStatus = await this.checkNetflixLoginStatus();
+            console.log('📊 Login status:', loginStatus);
             
             return loginStatus;
             
