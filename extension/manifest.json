@@ -34,7 +34,8 @@
       "matches": [
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
-        "http://[::1]:*/*"
+        "http://[::1]:*/*",
+        "https://dvqbao.github.io/*"
       ],
       "js": ["web-content.js"],
       "run_at": "document_end"
@@ -55,8 +56,7 @@
       "http://localhost:*/*",
       "http://127.0.0.1:*/*",
       "http://[::1]:*/*",
-      "https://yourdomain.com/*"
+      "https://dvqbao.github.io/*"
     ]
   }
 }
-
