@@ -13,7 +13,7 @@ const bcrypt = require('bcryptjs');
 
 const ADMIN_CREDENTIALS = {
     username: 'TiembanhNetflix',
-    password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjdQvO9tM6x4KdR6o2W3fq7w4KdR6o2', // password: admin123
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: admin123
     role: 'admin'
 };
 
@@ -25,29 +25,19 @@ router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         
-        console.log('🔐 Admin login attempt:', { username, password: '***' });
-        console.log('📋 Expected username:', ADMIN_CREDENTIALS.username);
-        
         // Validate
         if (!username || !password) {
-            console.log('❌ Missing username or password');
             return res.status(400).json({ error: 'Username and password are required' });
         }
         
         // Check credentials
         if (username !== ADMIN_CREDENTIALS.username) {
-            console.log('❌ Username mismatch:', username, '!=', ADMIN_CREDENTIALS.username);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        console.log('✅ Username matched, checking password...');
-        
         // Check password
         const isMatch = await bcrypt.compare(password, ADMIN_CREDENTIALS.password);
-        console.log('🔐 Password match result:', isMatch);
-        
         if (!isMatch) {
-            console.log('❌ Password mismatch');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
