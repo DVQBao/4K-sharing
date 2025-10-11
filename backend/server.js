@@ -53,6 +53,7 @@ const userRoutes = require('./routes/users');
 const cookieRoutes = require('./routes/cookies');
 const adminRoutes = require('./routes/admin');
 const adminAuthRoutes = require('./routes/admin-auth');
+const adminCookieRoutes = require('./routes/admin-cookies');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -60,6 +61,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/cookies', cookieRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin-auth', adminAuthRoutes);
+app.use('/api/admin/cookies', adminCookieRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

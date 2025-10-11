@@ -1,34 +1,62 @@
 // ========================================
-// Cookie Routes - Lấy Netflix cookie
+// Cookie Routes - Quản lý Netflix cookies
 // ========================================
 
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
+const Cookie = require('../models/Cookie');
 
-// Netflix cookie mẫu - Trong production sẽ quản lý pool cookies
-const NETFLIX_COOKIE = 'NetflixId=v%3D3%26ct%3DBgjHlOvcAxL2Arigp8V5bErQqO0COTaSWib2zCUeC2qiNuXTYbv1SJ9nhrt-7hEakEDvt7HJVrkyGs09kIVt7M53Z8NzdbE75FOamF5q6XftereeruBU5v4pBNggbg97HNTqBxw2gE-UUt3hzyadHcNbdz8TQKYOtcyEmcBaxoXsAJR13QSyFT2-3RRQyYlM_H0O4BrTAczVvAc3SVKd2mkNtwf2CYjlaEVviS7JEDUFG2o4eMAE3db3aDn62DLw5AXK2C7YaKVfpv7nsfDitbTp1p0apNMByQEqNOq3dusmNVCIuHlH2HVhAiLO8_94BB2I0I49ebiC4XPX0fGYTqGDuU1gCkwYOxhMEQhysBmb8KKfbGdZhYn84_q0xRYcTUi_-DFI3nf8Jb8PogIWMh3o4vRH6oa2RzYwYvHr_RHH3Nifx_f5hKBX4L2u6DYSAcC2H2svlWGy2h-b-1AC4YhO821XH6zEWazzCs6poe0bo4jSuRBDny2Ql_xf0zbaGAYiDgoMzOor99BBEbYgNYcv%26pg%3DBCLYEPK2DJD2BDL7SZZ7JKLCRY%26ch%3DAQEAEAABABSiReww9rblxsEScDlWQSttVWEyFcNQGZc.';
-
-// GET /api/cookies/get - Lấy cookie Netflix
-router.get('/get', authenticateToken, async (req, res) => {
+// GET /api/cookies/guest - Lấy cookie Netflix cho guest
+router.get('/guest', authenticateToken, async (req, res) => {
     try {
-        // Parse cookie string
-        const match = NETFLIX_COOKIE.match(/^([^=]+)=(.+)$/);
+        const userId = req.user.userId;
         
-        if (!match) {
-            throw new Error('Invalid cookie format');
+        // Tìm cookie đang được user sử dụng
+        let cookie = await Cookie.findOne({ 
+            usedBy: userId, 
+            isActive: true 
+        });
+        
+        // Nếu chưa có cookie, tìm cookie available
+        if (!cookie) {
+            cookie = await Cookie.findOne({ 
+                isActive: true,
+                usedBy: null,
+                $or: [
+                    { expiresAt: null },
+                    { expiresAt: { $gt: new Date() } }
+                ]
+            });
+            
+            if (!cookie) {
+                return res.status(503).json({ 
+                    error: 'No cookies available. Please try again later.' 
+                });
+            }
+            
+            // Assign cookie to user
+            await cookie.assignToUser(userId);
+        }
+        
+        // Check if cookie is expired
+        if (cookie.isExpired()) {
+            await cookie.releaseFromUser();
+            return res.status(410).json({ 
+                error: 'Cookie expired. Please try again.' 
+            });
         }
         
         const cookieData = {
-            name: match[1].trim(),
-            value: match[2].trim(),
-            domain: '.netflix.com',
-            path: '/',
-            secure: true,
-            httpOnly: false
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path,
+            secure: cookie.secure,
+            httpOnly: cookie.httpOnly
         };
         
-        console.log('✅ Cookie provided to user:', req.user.email);
+        console.log('✅ Cookie provided to user:', req.user.email, 'Cookie ID:', cookie._id);
         
         res.json({
             success: true,
@@ -37,6 +65,74 @@ router.get('/get', authenticateToken, async (req, res) => {
         
     } catch (error) {
         console.error('❌ Cookie error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/cookies/status - Kiểm tra trạng thái cookie của user
+router.get('/status', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        const cookie = await Cookie.findOne({ 
+            usedBy: userId, 
+            isActive: true 
+        });
+        
+        if (!cookie) {
+            return res.json({
+                success: true,
+                hasCookie: false,
+                message: 'No active cookie assigned'
+            });
+        }
+        
+        res.json({
+            success: true,
+            hasCookie: true,
+            cookie: {
+                id: cookie._id,
+                expiresAt: cookie.expiresAt,
+                isExpired: cookie.isExpired(),
+                lastUsed: cookie.lastUsed,
+                usageCount: cookie.usageCount
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Cookie status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/cookies/release - Release cookie từ user
+router.post('/release', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        const cookie = await Cookie.findOne({ 
+            usedBy: userId, 
+            isActive: true 
+        });
+        
+        if (!cookie) {
+            return res.json({
+                success: true,
+                message: 'No cookie to release'
+            });
+        }
+        
+        await cookie.releaseFromUser();
+        
+        console.log('✅ Cookie released by user:', req.user.email);
+        
+        res.json({
+            success: true,
+            message: 'Cookie released successfully'
+        });
+        
+    } catch (error) {
+        console.error('❌ Cookie release error:', error);
         res.status(500).json({ error: error.message });
     }
 });
