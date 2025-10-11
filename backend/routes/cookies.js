@@ -11,23 +11,33 @@ const Cookie = require('../models/Cookie');
 router.get('/guest', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Pro users get dedicated cookie (1 user/cookie)
+        // Free users share cookie (4 users/cookie)
         
         // Tìm cookie đang được user sử dụng
         let cookie = await Cookie.findOne({ 
-            usedBy: userId, 
+            currentUsers: userId,
             isActive: true 
         });
         
         // Nếu chưa có cookie, tìm cookie available
         if (!cookie) {
+            // Tìm cookie còn slot (< maxUsers)
             cookie = await Cookie.findOne({ 
                 isActive: true,
-                usedBy: null,
+                $expr: { $lt: [{ $size: "$currentUsers" }, "$maxUsers"] },
                 $or: [
                     { expiresAt: null },
                     { expiresAt: { $gt: new Date() } }
                 ]
-            });
+            }).sort({ cookieNumber: 1, usageCount: 1 }); // Ưu tiên cookie số nhỏ và ít dùng
             
             if (!cookie) {
                 return res.status(503).json({ 
@@ -41,7 +51,7 @@ router.get('/guest', authenticateToken, async (req, res) => {
         
         // Check if cookie is expired
         if (cookie.isExpired()) {
-            await cookie.releaseFromUser();
+            await cookie.releaseFromUser(userId);
             return res.status(410).json({ 
                 error: 'Cookie expired. Please try again.' 
             });
@@ -56,11 +66,13 @@ router.get('/guest', authenticateToken, async (req, res) => {
             httpOnly: cookie.httpOnly
         };
         
-        console.log('✅ Cookie provided to user:', req.user.email, 'Cookie ID:', cookie._id);
+        console.log(`✅ Cookie #${cookie.cookieNumber} provided to user:`, req.user.email, `(${cookie.currentUsers.length}/${cookie.maxUsers} users)`);
         
         res.json({
             success: true,
-            cookie: cookieData
+            cookie: cookieData,
+            cookieNumber: cookie.cookieNumber,
+            sharedUsers: cookie.currentUsers.length
         });
         
     } catch (error) {

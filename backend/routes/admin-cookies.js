@@ -343,55 +343,55 @@ router.post('/import-sample', authenticateAdmin, async (req, res) => {
     }
 });
 
-// POST /api/admin/cookies/bulk-import - Import nhiều cookies
+// POST /api/admin/cookies/bulk-import - Import cookies từ file txt (mỗi dòng 1 cookie)
 router.post('/bulk-import', authenticateAdmin, async (req, res) => {
     try {
-        const { cookies, source = 'manual' } = req.body;
+        const { cookiesText, clearExisting = false } = req.body;
         
-        if (!cookies || !Array.isArray(cookies)) {
-            return res.status(400).json({ error: 'Cookies array is required' });
+        if (!cookiesText || typeof cookiesText !== 'string') {
+            return res.status(400).json({ error: 'cookiesText (string) is required' });
         }
         
-        const results = {
-            success: 0,
-            failed: 0,
-            errors: []
-        };
+        // Parse cookies từ text (mỗi dòng 1 cookie)
+        const lines = cookiesText.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
         
-        for (let i = 0; i < cookies.length; i++) {
-            try {
-                const cookieData = cookies[i];
-                
-                const cookie = new Cookie({
-                    name: cookieData.name || 'NetflixId',
-                    value: cookieData.value,
-                    domain: cookieData.domain || '.netflix.com',
-                    path: cookieData.path || '/',
-                    secure: cookieData.secure !== false,
-                    httpOnly: cookieData.httpOnly || false,
-                    expiresAt: cookieData.expiresAt ? new Date(cookieData.expiresAt) : null,
-                    source,
-                    notes: cookieData.notes || `Imported from bulk import - Row ${i + 1}`
-                });
-                
-                await cookie.save();
-                results.success++;
-                
-            } catch (error) {
-                results.failed++;
-                results.errors.push({
-                    row: i + 1,
-                    error: error.message
-                });
-            }
+        if (lines.length === 0) {
+            return res.status(400).json({ error: 'No cookies found in text' });
         }
         
-        console.log(`✅ Bulk import completed: ${results.success} success, ${results.failed} failed`);
+        // Clear existing cookies if requested
+        if (clearExisting) {
+            await Cookie.deleteMany({});
+            console.log('🗑️ Cleared all existing cookies');
+        }
+        
+        // Create cookies với số thứ tự
+        const cookies = lines.map((cookieValue, index) => ({
+            name: 'NetflixId',
+            value: cookieValue,
+            domain: '.netflix.com',
+            path: '/',
+            secure: true,
+            httpOnly: false,
+            cookieNumber: index + 1, // Số thứ tự từ 1
+            maxUsers: 4, // 4 Free users/cookie
+            currentUsers: [],
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            source: 'import',
+            notes: `Imported from file - Cookie #${index + 1}`
+        }));
+        
+        // Insert cookies
+        const savedCookies = await Cookie.insertMany(cookies);
+        
+        console.log(`✅ Bulk imported ${savedCookies.length} cookies from file`);
         
         res.json({
             success: true,
-            message: `Bulk import completed: ${results.success} success, ${results.failed} failed`,
-            results
+            message: `Successfully imported ${savedCookies.length} cookies`,
+            count: savedCookies.length
         });
         
     } catch (error) {

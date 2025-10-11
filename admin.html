@@ -383,10 +383,6 @@
                 <p>Gói Pro</p>
             </div>
             <div class="stat-card">
-                <h3 id="verifiedUsers">-</h3>
-                <p>Đã xác thực</p>
-            </div>
-            <div class="stat-card">
                 <h3 id="totalCookies">-</h3>
                 <p>Tổng Cookies</p>
             </div>
@@ -400,7 +396,7 @@
             <input type="text" id="searchBox" class="search-box" placeholder="🔍 Tìm kiếm theo tên hoặc email...">
             <button class="btn btn-primary" onclick="loadUsers()">🔄 Làm mới</button>
             <button class="btn btn-secondary" onclick="exportUsers()">📊 Xuất Excel</button>
-            <button class="btn btn-warning" onclick="importSampleCookies()">🍪 Import 100 Cookies</button>
+            <button class="btn btn-warning" onclick="showImportCookiesModal()">📁 Import Cookies từ File</button>
             <button class="btn btn-info" onclick="showCookieManagement()">🔧 Quản lý Cookies</button>
             <a href="index.html" class="btn btn-success">🏠 Về trang chủ</a>
         </div>
@@ -718,8 +714,8 @@
                             <th>Tên</th>
                             <th>Email</th>
                             <th>Gói</th>
-                            <th>Trạng thái</th>
                             <th>Ngày tạo</th>
+                            <th>Hết hạn Pro</th>
                             <th>Đăng nhập cuối</th>
                             <th>Thao tác</th>
                         </tr>
@@ -730,9 +726,8 @@
             users.forEach((user, index) => {
                 const planClass = user.plan === 'pro' ? 'plan-pro' : 'plan-free';
                 const planText = user.plan === 'pro' ? 'Pro' : 'Free';
-                const statusClass = user.verified ? 'status-verified' : 'status-pending';
-                const statusText = user.verified ? 'Đã xác thực' : 'Chờ xác thực';
                 const createdAt = new Date(user.createdAt).toLocaleDateString('vi-VN');
+                const proExpires = user.proExpiresAt ? new Date(user.proExpiresAt).toLocaleDateString('vi-VN') : '-';
                 const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập';
 
                 tableHTML += `
@@ -741,8 +736,8 @@
                         <td>${user.name}</td>
                         <td>${user.email}</td>
                         <td><span class="plan-badge ${planClass}">${planText}</span></td>
-                        <td><span class="${statusClass}">${statusText}</span></td>
                         <td>${createdAt}</td>
+                        <td>${proExpires}</td>
                         <td>${lastLogin}</td>
                         <td>
                             <div class="action-buttons">
@@ -887,6 +882,44 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
                     }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(`✅ ${data.message}`, 'success');
+                    loadCookieStats();
+                } else {
+                    showMessage(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Import cookies error:', error);
+                showMessage('❌ Lỗi kết nối! Vui lòng thử lại.', 'error');
+            }
+        }
+
+        async function showImportCookiesModal() {
+            const cookiesText = prompt('📁 Paste nội dung file cookies (mỗi dòng 1 cookie):');
+            
+            if (!cookiesText || cookiesText.trim().length === 0) {
+                return;
+            }
+            
+            const clearExisting = confirm('🗑️ Xóa tất cả cookies cũ trước khi import?');
+            
+            try {
+                showMessage('🔄 Đang import cookies...', 'info');
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/cookies/bulk-import`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        cookiesText: cookiesText.trim(),
+                        clearExisting
+                    })
                 });
 
                 const data = await response.json();

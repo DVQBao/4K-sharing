@@ -51,9 +51,21 @@ const cookieSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    cookieNumber: {
+        type: Number,
+        default: 0
+    },
+    maxUsers: {
+        type: Number,
+        default: 4
+    },
+    currentUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     source: {
         type: String,
-        enum: ['manual', 'api', 'generated'],
+        enum: ['manual', 'api', 'generated', 'import', 'sample'],
         default: 'manual'
     },
     notes: {
@@ -75,22 +87,31 @@ cookieSchema.methods.isExpired = function() {
     return new Date() > this.expiresAt;
 };
 
-// Method to check if cookie is available
+// Method to check if cookie is available (for Free users - max 4 users/cookie)
 cookieSchema.methods.isAvailable = function() {
-    return this.isActive && !this.isExpired() && !this.usedBy;
+    return this.isActive && !this.isExpired() && this.currentUsers.length < this.maxUsers;
 };
 
-// Method to assign to user
+// Method to assign to user (support multiple users for Free plan)
 cookieSchema.methods.assignToUser = function(userId) {
-    this.usedBy = userId;
+    // Check if user already assigned
+    if (!this.currentUsers.includes(userId)) {
+        this.currentUsers.push(userId);
+    }
     this.lastUsed = new Date();
     this.usageCount += 1;
     return this.save();
 };
 
 // Method to release from user
-cookieSchema.methods.releaseFromUser = function() {
-    this.usedBy = null;
+cookieSchema.methods.releaseFromUser = function(userId) {
+    if (userId) {
+        // Remove specific user
+        this.currentUsers = this.currentUsers.filter(id => id.toString() !== userId.toString());
+    } else {
+        // Remove all users
+        this.currentUsers = [];
+    }
     return this.save();
 };
 
