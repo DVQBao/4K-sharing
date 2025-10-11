@@ -281,14 +281,17 @@ function handleWatchAsGuest() {
     if (currentUser) {
         const user = JSON.parse(currentUser);
         if (user.plan === 'pro') {
-            // User Pro: Skip ad, hiện modal watching section trực tiếp
+            // User Pro: Skip ad, bắt đầu xem ngay
             console.log('⭐ Pro user - skipping ad, starting directly');
             showToast('⭐ Pro user - Bắt đầu xem ngay!', 'success');
             
-            // Mở modal watching section (không cần ad)
-            showAdModal();
+            // Mở modal và chỉ hiện watching section
+            elements.adModal.classList.add('active');
             elements.adSection.style.display = 'none';
             elements.watchingSection.style.display = 'block';
+            
+            // Hiện thông báo đang xử lý
+            showStepStatus(2, 'success', '⏳ Pro user - Đang kết nối Netflix...');
             
             // Tự động bắt đầu
             setTimeout(() => {
@@ -489,27 +492,28 @@ async function handleStartWatching() {
         
         if (result.success) {
             // Thành công!
+            console.log('✅ Login successful, preparing to focus Netflix tab...');
             showStepStatus(2, 'success', '✅ Đăng nhập thành công! Đang chuyển sang Netflix...');
             showToast('🎉 Đăng nhập thành công!', 'success');
             
-            // Đóng modal
-            closeAdModal();
-            
-            // Focus vào tab Netflix
-            setTimeout(() => {
-                if (state.netflixTabRef && !state.netflixTabRef.closed) {
-                    try {
-                        state.netflixTabRef.focus();
-                        console.log('✅ Focused Netflix tab');
-                        showStepStatus(2, 'success', '🎉 Hoàn thành! Đã chuyển sang tab Netflix. Enjoy! 🍿');
-                    } catch (error) {
-                        console.warn('Cannot focus tab:', error);
-                        showStepStatus(2, 'success', '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim.');
-                    }
-                } else {
-                    showStepStatus(2, 'success', '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim.');
+            // Focus vào tab Netflix trước khi đóng modal
+            if (state.netflixTabRef && !state.netflixTabRef.closed) {
+                try {
+                    console.log('🔄 Focusing Netflix tab...');
+                    state.netflixTabRef.focus();
+                    console.log('✅ Netflix tab focused successfully');
+                } catch (error) {
+                    console.warn('⚠️ Cannot focus tab:', error);
                 }
-            }, 2000);
+            } else {
+                console.warn('⚠️ Netflix tab not found or closed');
+            }
+            
+            // Đợi 1.5s để user thấy thông báo, rồi đóng modal
+            setTimeout(() => {
+                showStepStatus(2, 'success', '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim. Enjoy! 🍿');
+                closeAdModal();
+            }, 1500);
             
         } else {
             // Thất bại sau khi đã retry
