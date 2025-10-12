@@ -100,6 +100,16 @@ cookieSchema.methods.assignToUser = function(userId) {
     }
     this.lastUsed = new Date();
     this.usageCount += 1;
+    
+    // Tự động đánh dấu "đầy" nếu đạt maxUsers
+    if (this.currentUsers.length >= this.maxUsers) {
+        console.log(`🔒 Cookie #${this.cookieNumber} is now FULL (${this.currentUsers.length}/${this.maxUsers})`);
+        // Có thể set isActive=false hoặc thêm status field
+        // Tạm thời giữ isActive=true để admin biết cookie còn hoạt động nhưng đầy
+        // Nếu muốn ẩn khỏi available list, set isActive=false
+        // this.isActive = false; // Uncomment nếu muốn ẩn cookie đầy
+    }
+    
     return this.save();
 };
 

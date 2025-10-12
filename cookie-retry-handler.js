@@ -79,11 +79,14 @@ class CookieRetryHandler {
                 console.error(`❌ Attempt ${this.currentRetry} failed:`, error);
                 
                 if (this.currentRetry >= this.maxRetries) {
-                    // Out of retries
+                    // Out of retries - release any failed cookie assignment
+                    console.log('❌ Reached max retries, releasing failed cookies...');
+                    await this.releaseCookie();
+                    
                     if (onProgress) {
                         onProgress({
                             status: 'failed',
-                            message: 'Tạm thời không có tài khoản khả dụng. Vui lòng quay lại sau.',
+                            message: 'Đăng nhập thất bại. Vui lòng thử lại sau.',
                             error: error.message
                         });
                     }
@@ -92,7 +95,10 @@ class CookieRetryHandler {
             }
         }
         
-        // Max retries reached
+        // Max retries reached - release cookies
+        console.log('❌ Max retries reached, releasing failed cookies...');
+        await this.releaseCookie();
+        
         return {
             success: false,
             error: 'Đã thử tất cả cookie nhưng không thành công'
@@ -104,7 +110,25 @@ class CookieRetryHandler {
      */
     async getCookieFromBackend() {
         try {
-            const response = await fetch(`${this.backendUrl}/api/cookies/guest`, {
+            // Build URL with query params
+            const url = new URL(`${this.backendUrl}/api/cookies/guest`);
+            
+            // Skip current cookie when retrying
+            if (this.currentRetry > 1) {
+                url.searchParams.set('skipCurrent', 'true');
+                console.log('⏭️ Requesting to skip current cookie');
+            }
+            
+            // Exclude cookies that already failed
+            if (this.usedCookies.size > 0) {
+                const excludeIds = JSON.stringify([...this.usedCookies]);
+                url.searchParams.set('excludeIds', excludeIds);
+                console.log(`🚫 Excluding ${this.usedCookies.size} failed cookie(s):`, [...this.usedCookies]);
+            }
+            
+            console.log('📤 Fetching cookie from:', url.toString());
+            
+            const response = await fetch(url.toString(), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -113,12 +137,14 @@ class CookieRetryHandler {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
             }
             
             const data = await response.json();
             
             if (data.cookie) {
+                console.log(`✅ Received cookie #${data.cookieNumber} (ID: ${data.cookie._id})`);
                 return {
                     cookieId: data.cookie._id || 'unknown',
                     cookieNumber: data.cookieNumber,
@@ -328,17 +354,42 @@ class CookieRetryHandler {
                     'Authorization': `Bearer ${this.authToken}`
                 },
                 body: JSON.stringify({
-                    notes: `die - Error: ${errorCode || 'UNKNOWN'} - ${new Date().toLocaleString('vi-VN')}`,
+                    notes: `cookie die, recheck - Error: ${errorCode || 'UNKNOWN'} - ${new Date().toLocaleString('vi-VN')}`,
                     isActive: false
                 })
             });
             
             if (response.ok) {
-                console.log(`✅ Marked cookie ${cookieId} as dead`);
+                console.log(`✅ Marked cookie ${cookieId} as dead (cookie die, recheck)`);
             }
             
         } catch (error) {
             console.error('❌ Mark cookie as dead error:', error);
+        }
+    }
+    
+    /**
+     * Release cookie from user (khi hết retries)
+     */
+    async releaseCookie() {
+        try {
+            console.log('🔓 Releasing failed cookie assignment from user...');
+            const response = await fetch(`${this.backendUrl}/api/cookies/release`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                }
+            });
+            
+            if (response.ok) {
+                console.log('✅ Cookie released successfully');
+            } else {
+                console.warn('⚠️ Failed to release cookie:', response.status);
+            }
+            
+        } catch (error) {
+            console.error('❌ Release cookie error:', error);
         }
     }
     
