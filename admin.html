@@ -642,6 +642,9 @@
                 const data = await response.json();
                 currentUsers = data.users;
                 
+                // Load available cookies for dropdown
+                await loadAvailableCookiesForDropdown();
+                
                 updateStats(data.stats);
                 renderUsersTable(currentUsers);
                 showMessage('✅ Tải dữ liệu thành công!', 'success');
@@ -777,8 +780,10 @@
             const email = inputs[1].value.trim();
             const newPassword = inputs[2].value.trim();
             const plan = inputs[3].value;
-            const cookieNumber = inputs[4].value;
+            const cookieId = inputs[4].value; // Dropdown value là cookieId, không phải cookieNumber
             const proExpiresAt = inputs[5].value;
+            
+            console.log('💾 Saving user row...', { name, email, plan, cookieId, proExpiresAt });
             
             // Validate
             if (!name || !email) {
@@ -832,29 +837,24 @@
                     }
                 }
                 
-                // Assign cookie if changed
-                if (cookieNumber && cookieNumber !== '-') {
-                    // Find cookie by number
-                    const cookiesResponse = await fetch(`${BACKEND_URL}/api/admin/cookies`, {
+                // Assign cookie if selected from dropdown
+                if (cookieId) {
+                    console.log('🍪 Assigning cookie:', cookieId);
+                    const assignResponse = await fetch(`${BACKEND_URL}/api/admin-users/${userId}/assign-cookie`, {
+                        method: 'POST',
                         headers: {
+                            'Content-Type': 'application/json',
                             'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-                        }
+                        },
+                        body: JSON.stringify({ cookieId })
                     });
                     
-                    if (cookiesResponse.ok) {
-                        const cookiesData = await cookiesResponse.json();
-                        const targetCookie = cookiesData.cookies.find(c => c.cookieNumber === parseInt(cookieNumber));
-                        
-                        if (targetCookie) {
-                            await fetch(`${BACKEND_URL}/api/admin-users/${userId}/assign-cookie`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-                                },
-                                body: JSON.stringify({ cookieId: targetCookie._id })
-                            });
-                        }
+                    if (!assignResponse.ok) {
+                        const assignError = await assignResponse.json();
+                        console.warn('⚠️ Assign cookie warning:', assignError.error);
+                    } else {
+                        const assignData = await assignResponse.json();
+                        console.log('✅ Cookie assigned:', assignData);
                     }
                 }
                 
@@ -936,12 +936,21 @@
                 
                 // Cookie info
                 let cookieNumber = '-';
+                let cookieCookieId = '';
                 let cookieColor = '#6b7280';
                 if (user.cookieInfo) {
                     cookieNumber = user.cookieInfo.cookieNumber;
                     const { usersCount, maxUsers } = user.cookieInfo;
                     cookieColor = usersCount >= maxUsers ? '#f59e0b' : '#10b981';
                 }
+                
+                // Build cookie dropdown options
+                let cookieOptions = '<option value="">-- Chọn cookie --</option>';
+                availableCookiesForAssign.forEach(c => {
+                    const selected = c.cookieNumber === cookieNumber ? 'selected' : '';
+                    const userCount = c.currentUsers?.length || 0;
+                    cookieOptions += `<option value="${c._id}" ${selected}>Cookie #${c.cookieNumber} (${userCount}/4)</option>`;
+                });
                 
                 // IP, Device, Location
                 const ip = user.lastLoginIP || '-';
@@ -982,7 +991,9 @@
                         </td>
                         <td>
                             <span class="view-mode" style="color: ${cookieColor}; font-family: monospace; font-weight: 600;">#${cookieNumber}</span>
-                            <input type="number" class="edit-mode" value="${cookieNumber === '-' ? '' : cookieNumber}" placeholder="Cookie #" style="display: none; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                            <select class="edit-mode cookie-dropdown" style="display: none; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                                ${cookieOptions}
+                            </select>
                         </td>
                         <td style="font-size: 0.85rem; color: #6b7280;">${ip}</td>
                         <td style="font-size: 0.85rem; color: #6b7280;">${device}</td>
@@ -1276,6 +1287,29 @@
         }
         
         let allCookies = [];
+        let availableCookiesForAssign = []; // Cookies có thể assign (isActive=true, slot<4)
+        
+        async function loadAvailableCookiesForDropdown() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/cookies?limit=1000`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Lọc cookies: isActive=true và còn slot
+                    availableCookiesForAssign = (data.cookies || [])
+                        .filter(c => c.isActive && (c.currentUsers?.length || 0) < (c.maxUsers || 4))
+                        .sort((a, b) => (a.cookieNumber || 0) - (b.cookieNumber || 0));
+                    
+                    console.log(`✅ Loaded ${availableCookiesForAssign.length} available cookies for assignment`);
+                }
+            } catch (error) {
+                console.error('❌ Load available cookies error:', error);
+            }
+        }
         
         async function loadCookiesList() {
             try {
@@ -1309,6 +1343,9 @@
                 return;
             }
             
+            // Sắp xếp cookies theo số thứ tự tăng dần
+            const sortedCookies = [...cookies].sort((a, b) => (a.cookieNumber || 0) - (b.cookieNumber || 0));
+            
             let html = `
                 <table class="table">
                     <thead>
@@ -1318,7 +1355,7 @@
                             <th>Ngày thêm</th>
                             <th>Hết hạn</th>
                             <th>Trạng thái</th>
-                            <th>Users (${cookies.reduce((sum, c) => sum + (c.currentUsers?.length || 0), 0)})</th>
+                            <th>Users (${sortedCookies.reduce((sum, c) => sum + (c.currentUsers?.length || 0), 0)})</th>
                             <th>Ghi chú</th>
                             <th>Thao tác</th>
                         </tr>
@@ -1326,15 +1363,19 @@
                     <tbody>
             `;
             
-            cookies.forEach(cookie => {
+            sortedCookies.forEach(cookie => {
                 const createdAt = new Date(cookie.createdAt).toLocaleDateString('vi-VN');
                 const expiresAt = cookie.expiresAt ? new Date(cookie.expiresAt).toLocaleDateString('vi-VN') : '-';
                 const isExpired = cookie.expiresAt && new Date(cookie.expiresAt) < new Date();
                 const userCount = cookie.currentUsers?.length || 0;
                 const isFull = userCount >= (cookie.maxUsers || 4);
+                const isDead = !cookie.isActive; // Cookie bị mark die
                 
                 let statusBadge = '';
-                if (isExpired) {
+                if (isDead) {
+                    // Ưu tiên: Cookie die/recheck (màu đỏ)
+                    statusBadge = '<span style="background: #dc2626; color: white; padding: 4px 10px; border-radius: 5px; font-size: 0.85rem; font-weight: 600;">🔴 Die - Recheck</span>';
+                } else if (isExpired) {
                     statusBadge = '<span style="background: #dc2626; color: white; padding: 4px 10px; border-radius: 5px; font-size: 0.85rem;">⏰ Hết hạn</span>';
                 } else if (isFull) {
                     statusBadge = '<span style="background: #f59e0b; color: white; padding: 4px 10px; border-radius: 5px; font-size: 0.85rem;">🔒 Đầy</span>';
