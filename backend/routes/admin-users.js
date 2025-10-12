@@ -102,34 +102,67 @@ router.post('/:id/assign-cookie', async (req, res) => {
         const { id } = req.params;
         const { cookieId } = req.body;
         
+        console.log(`🔧 Admin assigning cookie...`);
+        console.log(`👤 User ID: ${id}`);
+        console.log(`🍪 Cookie ID: ${cookieId}`);
+        
         const user = await User.findById(id);
         if (!user) {
+            console.log('❌ User not found');
             return res.status(404).json({ error: 'User not found' });
         }
         
-        const cookie = await Cookie.findById(cookieId);
-        if (!cookie) {
+        const newCookie = await Cookie.findById(cookieId);
+        if (!newCookie) {
+            console.log('❌ Cookie not found');
             return res.status(404).json({ error: 'Cookie not found' });
         }
         
-        // Release user from current cookie
-        await Cookie.updateMany(
+        console.log(`📊 User: ${user.email}`);
+        console.log(`📊 New Cookie: #${newCookie.cookieNumber}`);
+        
+        // ====================================
+        // BƯỚC 1: Release user from ALL old cookies
+        // ====================================
+        const releaseResult = await Cookie.updateMany(
             { currentUsers: user._id },
             { $pull: { currentUsers: user._id } }
         );
+        console.log(`✅ Released user from ${releaseResult.modifiedCount} old cookie(s)`);
         
-        // Assign to new cookie
-        if (!cookie.currentUsers.includes(user._id)) {
-            cookie.currentUsers.push(user._id);
-            await cookie.save();
+        // ====================================
+        // BƯỚC 2: Assign to new cookie
+        // ====================================
+        const oldUserCount = newCookie.currentUsers.length;
+        
+        if (!newCookie.currentUsers.some(uid => uid.toString() === user._id.toString())) {
+            newCookie.currentUsers.push(user._id);
+            newCookie.lastUsed = new Date();
+            newCookie.usageCount += 1;
+            await newCookie.save();
+            console.log(`✅ Added user to cookie #${newCookie.cookieNumber}`);
+        } else {
+            console.log(`ℹ️ User already in cookie #${newCookie.cookieNumber}`);
         }
         
-        console.log(`✅ Admin assigned Cookie #${cookie.cookieNumber} to user: ${user.email}`);
+        // Fetch lại để verify
+        const verifiedCookie = await Cookie.findById(cookieId);
+        console.log(`📊 Cookie #${verifiedCookie.cookieNumber}: ${oldUserCount}/${verifiedCookie.maxUsers} → ${verifiedCookie.currentUsers.length}/${verifiedCookie.maxUsers}`);
+        
+        // ====================================
+        // BƯỚC 3: Update User.assignedCookie
+        // ====================================
+        user.assignedCookie = newCookie._id;
+        await user.save();
+        console.log(`✅ Updated user.assignedCookie to Cookie #${newCookie.cookieNumber}`);
+        
+        console.log(`✅ Admin assigned Cookie #${newCookie.cookieNumber} to user: ${user.email}`);
         
         res.json({
             success: true,
-            message: `Assigned Cookie #${cookie.cookieNumber} to user`,
-            cookieNumber: cookie.cookieNumber
+            message: `Assigned Cookie #${newCookie.cookieNumber} to user`,
+            cookieNumber: newCookie.cookieNumber,
+            sharedUsers: verifiedCookie.currentUsers.length
         });
         
     } catch (error) {
