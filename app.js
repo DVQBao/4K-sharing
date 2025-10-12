@@ -47,6 +47,9 @@ const elements = {
     
     // Ad modal
     adModal: document.getElementById('adModal'),
+    adSection: document.getElementById('adSection'),
+    watchingSection: document.getElementById('watchingSection'),
+    watchingProgress: document.getElementById('watchingProgress'),
     adContent: document.getElementById('adContent'),
     adMessage: document.getElementById('adMessage'),
     adTimer: document.getElementById('adTimer'),
@@ -287,11 +290,16 @@ function handleWatchAsGuest() {
             
             // Mở modal và chỉ hiện watching section
             elements.adModal.classList.add('active');
-            elements.adSection.style.display = 'none';
-            elements.watchingSection.style.display = 'block';
+            
+            // Ẩn ad section, hiện watching section
+            if (elements.adSection) elements.adSection.style.display = 'none';
+            if (elements.watchingSection) elements.watchingSection.style.display = 'block';
             
             // Hiện thông báo đang xử lý
             showStepStatus(2, 'success', '⏳ Pro user - Đang kết nối Netflix...');
+            if (elements.watchingProgress) {
+                elements.watchingProgress.textContent = '⏳ Pro user - Đang kết nối Netflix...';
+            }
             
             // Tự động bắt đầu
             setTimeout(() => {
@@ -463,6 +471,10 @@ async function handleStartWatching() {
             return;
         }
         
+        // Chuyển sang watching section (ẩn ad, hiện progress)
+        if (elements.adSection) elements.adSection.style.display = 'none';
+        if (elements.watchingSection) elements.watchingSection.style.display = 'block';
+        
         // Tạo retry handler
         const retryHandler = new CookieRetryHandler(
             BACKEND_URL,
@@ -471,6 +483,9 @@ async function handleStartWatching() {
         
         // Bắt đầu quá trình login với auto-retry
         showStepStatus(2, 'success', '⏳ Đang kết nối...');
+        if (elements.watchingProgress) {
+            elements.watchingProgress.textContent = '⏳ Đang kết nối...';
+        }
         
         const result = await retryHandler.attemptLogin((progress) => {
             // Cập nhật UI dựa trên tiến trình
@@ -478,15 +493,27 @@ async function handleStartWatching() {
             
             if (progress.status === 'trying') {
                 showStepStatus(2, 'success', `⏳ ${progress.message}`);
+                if (elements.watchingProgress) {
+                    elements.watchingProgress.textContent = `⏳ ${progress.message}`;
+                }
             } else if (progress.status === 'retrying') {
                 showStepStatus(2, 'warning', `🔄 ${progress.message}`);
+                if (elements.watchingProgress) {
+                    elements.watchingProgress.textContent = `🔄 ${progress.message}`;
+                }
                 if (progress.errorCode) {
                     showToast(`Cookie lỗi (${progress.errorCode}), đang thử cookie khác...`, 'warning');
                 }
             } else if (progress.status === 'success') {
                 showStepStatus(2, 'success', `✅ ${progress.message}`);
+                if (elements.watchingProgress) {
+                    elements.watchingProgress.textContent = `✅ ${progress.message}`;
+                }
             } else if (progress.status === 'failed') {
                 showStepStatus(2, 'error', `❌ ${progress.message}`);
+                if (elements.watchingProgress) {
+                    elements.watchingProgress.textContent = `❌ ${progress.message}`;
+                }
             }
         });
         

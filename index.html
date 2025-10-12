@@ -756,22 +756,44 @@
     <!-- Ad Modal -->
     <div class="modal" id="adModal">
         <div class="modal-content">
-            <h2 style="margin-bottom: 20px; text-align: center;">📺 Vui lòng xem quảng cáo</h2>
-            
-            <div class="video-container">
-                <div class="ad-content" id="adContent">
-                    <h2>🎬</h2>
-                    <p id="adMessage">Đang tải quảng cáo...</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+            <!-- Ad Section (Free users) -->
+            <div id="adSection">
+                <h2 style="margin-bottom: 20px; text-align: center;">📺 Vui lòng xem quảng cáo</h2>
+                
+                <div class="video-container">
+                    <div class="ad-content" id="adContent">
+                        <h2>🎬</h2>
+                        <p id="adMessage">Đang tải quảng cáo...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
                     </div>
+                    <div class="ad-timer" id="adTimer">Ad: <span id="timeLeft">2</span>s</div>
                 </div>
-                <div class="ad-timer" id="adTimer">Ad: <span id="timeLeft">2</span>s</div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="cancelBtn">Hủy</button>
+                    <button class="btn" id="startWatchingBtn" disabled>Bắt đầu xem</button>
+                </div>
             </div>
 
-            <div class="modal-actions">
-                <button class="btn btn-secondary" id="cancelBtn">Hủy</button>
-                <button class="btn" id="startWatchingBtn" disabled>Bắt đầu xem</button>
+            <!-- Watching Section (Progress for all users) -->
+            <div id="watchingSection" style="display: none;">
+                <h2 style="margin-bottom: 20px; text-align: center;">🎬 Đang kết nối Netflix...</h2>
+                
+                <div class="video-container">
+                    <div class="ad-content">
+                        <h2>⏳</h2>
+                        <p id="watchingProgress">Đang xử lý...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 50%; animation: pulse 1s infinite;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeAdModal()">Đóng</button>
+                </div>
             </div>
         </div>
     </div>
