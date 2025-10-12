@@ -50,6 +50,7 @@ const elements = {
     adSection: document.getElementById('adSection'),
     watchingSection: document.getElementById('watchingSection'),
     watchingProgress: document.getElementById('watchingProgress'),
+    watchingIcon: document.getElementById('watchingIcon'),
     adContent: document.getElementById('adContent'),
     adMessage: document.getElementById('adMessage'),
     adTimer: document.getElementById('adTimer'),
@@ -492,27 +493,27 @@ async function handleStartWatching() {
             console.log('🔄 Progress:', progress);
             
             if (progress.status === 'trying') {
-                showStepStatus(2, 'success', `⏳ ${progress.message}`);
+                if (elements.watchingIcon) elements.watchingIcon.textContent = '⏳';
                 if (elements.watchingProgress) {
-                    elements.watchingProgress.textContent = `⏳ ${progress.message}`;
+                    elements.watchingProgress.textContent = 'Đang đăng nhập...';
                 }
             } else if (progress.status === 'retrying') {
-                showStepStatus(2, 'warning', `🔄 ${progress.message}`);
+                if (elements.watchingIcon) elements.watchingIcon.textContent = '🔄';
                 if (elements.watchingProgress) {
-                    elements.watchingProgress.textContent = `🔄 ${progress.message}`;
+                    elements.watchingProgress.textContent = 'Đang đăng nhập...';
                 }
                 if (progress.errorCode) {
-                    showToast(`Cookie lỗi (${progress.errorCode}), đang thử cookie khác...`, 'warning');
+                    console.log(`Cookie lỗi (${progress.errorCode}), đang thử cookie khác...`);
                 }
             } else if (progress.status === 'success') {
-                showStepStatus(2, 'success', `✅ ${progress.message}`);
+                if (elements.watchingIcon) elements.watchingIcon.textContent = '✅';
                 if (elements.watchingProgress) {
-                    elements.watchingProgress.textContent = `✅ ${progress.message}`;
+                    elements.watchingProgress.textContent = 'Đăng nhập thành công!';
                 }
             } else if (progress.status === 'failed') {
-                showStepStatus(2, 'error', `❌ ${progress.message}`);
+                if (elements.watchingIcon) elements.watchingIcon.textContent = '❌';
                 if (elements.watchingProgress) {
-                    elements.watchingProgress.textContent = `❌ ${progress.message}`;
+                    elements.watchingProgress.textContent = 'Đăng nhập thất bại. Vui lòng thử lại sau.';
                 }
             }
         });
@@ -520,15 +521,34 @@ async function handleStartWatching() {
         if (result.success) {
             // Thành công!
             console.log('✅ Login successful, preparing to focus Netflix tab...');
-            showStepStatus(2, 'success', '✅ Đăng nhập thành công! Đang chuyển sang Netflix...');
+            
+            if (elements.watchingIcon) elements.watchingIcon.textContent = '✅';
+            if (elements.watchingProgress) {
+                elements.watchingProgress.textContent = 'Đăng nhập thành công! Đang chuyển sang Netflix...';
+            }
+            
             showToast('🎉 Đăng nhập thành công!', 'success');
             
-            // Focus vào tab Netflix trước khi đóng modal
+            // Focus vào tab Netflix - thử nhiều cách
             if (state.netflixTabRef && !state.netflixTabRef.closed) {
                 try {
-                    console.log('🔄 Focusing Netflix tab...');
+                    console.log('🔄 Attempting to focus Netflix tab...');
+                    
+                    // Cách 1: Focus trực tiếp
                     state.netflixTabRef.focus();
-                    console.log('✅ Netflix tab focused successfully');
+                    
+                    // Cách 2: Blur current window trước
+                    window.blur();
+                    state.netflixTabRef.focus();
+                    
+                    // Cách 3: Sử dụng postMessage để Netflix tab tự focus
+                    try {
+                        state.netflixTabRef.postMessage({ action: 'focus' }, 'https://www.netflix.com');
+                    } catch (e) {
+                        console.log('Cannot postMessage:', e);
+                    }
+                    
+                    console.log('✅ Netflix tab focus command sent');
                 } catch (error) {
                     console.warn('⚠️ Cannot focus tab:', error);
                 }
@@ -538,7 +558,9 @@ async function handleStartWatching() {
             
             // Đợi 1.5s để user thấy thông báo, rồi đóng modal
             setTimeout(() => {
-                showStepStatus(2, 'success', '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim. Enjoy! 🍿');
+                if (elements.watchingProgress) {
+                    elements.watchingProgress.textContent = '🎉 Hoàn thành! Kiểm tra tab Netflix để xem phim.';
+                }
                 closeAdModal();
             }, 1500);
             
