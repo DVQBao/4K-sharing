@@ -533,54 +533,44 @@ async function handleStartWatching() {
             
             showToast('🎉 Đăng nhập thành công!', 'success');
             
-            // Focus vào tab Netflix - thử nhiều cách
-            console.log('🔄 Attempting to focus Netflix tab...');
+            // Focus vào tab Netflix qua extension (cách chắc chắn nhất)
+            console.log('🔄 Requesting extension to focus Netflix tab...');
             
-            // Kiểm tra và thử tìm lại tab reference nếu cần
-            if (!state.netflixTabRef || state.netflixTabRef.closed) {
-                console.warn('⚠️ Tab reference lost, trying to find it again...');
-                try {
-                    // Thử mở lại với tên đã đặt (có thể tìm được tab hiện có)
-                    state.netflixTabRef = window.open('', CONFIG.NETFLIX_TAB_NAME);
-                } catch (e) {
-                    console.error('Cannot find tab:', e);
-                }
-            }
-            
-            if (state.netflixTabRef && !state.netflixTabRef.closed) {
-                try {
-                    // Cách 1: Blur current window để Netflix tab có thể focus
-                    window.blur();
+            try {
+                const focusResponse = await chrome.runtime.sendMessage(
+                    CONFIG.EXTENSION_ID,
+                    { action: 'focusNetflixTab' }
+                );
+                
+                if (focusResponse && focusResponse.success) {
+                    console.log('✅ Netflix tab focused successfully via extension!');
+                    console.log('   Tab ID:', focusResponse.tabId);
+                    console.log('   Window ID:', focusResponse.windowId);
+                } else {
+                    console.warn('⚠️ Extension could not focus tab:', focusResponse?.error);
                     
-                    // Cách 2: Focus Netflix tab
-                    state.netflixTabRef.focus();
-                    console.log('✅ Netflix tab focus() called');
-                    
-                    // Cách 3: Thử navigate để force bring-to-front
-                    try {
-                        const currentUrl = state.netflixTabRef.location.href;
-                        if (currentUrl.includes('netflix.com')) {
-                            // Tab vẫn trên Netflix, chỉ cần focus
-                            state.netflixTabRef.focus();
-                        }
-                    } catch (e) {
-                        // Cross-origin - không thể đọc location, nhưng focus vẫn hoạt động
-                        console.log('Cross-origin tab, focus only');
+                    // Fallback: Thử focus bằng window reference
+                    console.log('🔄 Trying fallback focus method...');
+                    if (state.netflixTabRef && !state.netflixTabRef.closed) {
+                        window.blur();
+                        state.netflixTabRef.focus();
+                        console.log('✅ Fallback focus attempted');
                     }
-                    
-                    // Cách 4: PostMessage để tab tự focus (nếu có listener)
-                    try {
-                        state.netflixTabRef.postMessage({ action: 'focus' }, '*');
-                    } catch (e) {
-                        console.log('Cannot postMessage:', e);
-                    }
-                    
-                    console.log('✅ All focus methods attempted');
-                } catch (error) {
-                    console.warn('⚠️ Cannot focus tab:', error);
                 }
-            } else {
-                console.warn('⚠️ Netflix tab not found or closed - user needs to switch manually');
+            } catch (error) {
+                console.error('❌ Error requesting focus via extension:', error);
+                
+                // Fallback: Thử focus bằng window reference
+                console.log('🔄 Trying fallback focus method...');
+                if (state.netflixTabRef && !state.netflixTabRef.closed) {
+                    try {
+                        window.blur();
+                        state.netflixTabRef.focus();
+                        console.log('✅ Fallback focus attempted');
+                    } catch (e) {
+                        console.warn('⚠️ Fallback focus also failed:', e);
+                    }
+                }
             }
             
             // Đợi 1.5s để user thấy thông báo, rồi đóng modal

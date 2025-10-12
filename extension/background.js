@@ -197,6 +197,55 @@ chrome.runtime.onMessageExternal.addListener(
             return true; // Keep channel open for async response
         }
         
+        // Handle focusNetflixTab request - Force focus Netflix tab
+        if (request.action === 'focusNetflixTab') {
+            (async () => {
+                try {
+                    console.log('🔍 Searching for Netflix tab to focus...');
+                    
+                    // Find Netflix tab
+                    const tabs = await chrome.tabs.query({
+                        url: 'https://www.netflix.com/*'
+                    });
+                    
+                    if (tabs.length === 0) {
+                        console.warn('⚠️ No Netflix tab found');
+                        sendResponse({ 
+                            success: false, 
+                            error: 'No Netflix tab found' 
+                        });
+                        return;
+                    }
+                    
+                    const netflixTab = tabs[0];
+                    console.log('✅ Found Netflix tab:', netflixTab.id);
+                    
+                    // Activate the tab
+                    await chrome.tabs.update(netflixTab.id, { active: true });
+                    console.log('✅ Tab activated');
+                    
+                    // Focus the window containing the tab
+                    await chrome.windows.update(netflixTab.windowId, { focused: true });
+                    console.log('✅ Window focused');
+                    
+                    sendResponse({ 
+                        success: true,
+                        tabId: netflixTab.id,
+                        windowId: netflixTab.windowId
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Focus Netflix tab error:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message 
+                    });
+                }
+            })();
+            
+            return true; // Keep channel open for async response
+        }
+        
         return false;
     }
 );
