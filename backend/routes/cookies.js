@@ -181,13 +181,163 @@ router.get('/status', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/cookies/preview - Preview cookie KHÔNG assign (dùng cho retry logic)
+router.get('/preview', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { skipCurrent, excludeIds } = req.query;
+        
+        console.log('👀 Cookie PREVIEW request from user:', req.user.email, 'ID:', userId);
+        console.log('📋 Request params:', { skipCurrent, excludeIds });
+        
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            console.log('❌ User not found:', userId);
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Build query - tìm cookie available KHÔNG gán user
+        let query = {
+            isActive: true,
+            $expr: { $lt: [{ $size: "$currentUsers" }, "$maxUsers"] },
+            $or: [
+                { expiresAt: null },
+                { expiresAt: { $gt: new Date() } }
+            ]
+        };
+        
+        // Bỏ qua cookie hiện tại nếu yêu cầu
+        if (skipCurrent === 'true') {
+            query.currentUsers = { $ne: userId };
+        }
+        
+        // Bỏ qua các cookie đã thử (excludeIds)
+        if (excludeIds) {
+            try {
+                let idsToExclude = [];
+                if (typeof excludeIds === 'string') {
+                    try {
+                        idsToExclude = JSON.parse(excludeIds);
+                    } catch {
+                        idsToExclude = excludeIds.split(',').map(id => id.trim()).filter(id => id);
+                    }
+                } else if (Array.isArray(excludeIds)) {
+                    idsToExclude = excludeIds;
+                }
+                
+                if (idsToExclude.length > 0) {
+                    query._id = { $nin: idsToExclude };
+                    console.log('🚫 Excluding cookies:', idsToExclude);
+                }
+            } catch (error) {
+                console.warn('⚠️ Failed to parse excludeIds:', error);
+            }
+        }
+        
+        // Tìm cookie còn slot - KHÔNG assign
+        const cookie = await Cookie.findOne(query)
+            .sort({ cookieNumber: 1, usageCount: 1 });
+        
+        if (!cookie) {
+            console.log('❌ No available cookies found for preview');
+            return res.status(503).json({ 
+                error: 'No cookies available. Please try again later.' 
+            });
+        }
+        
+        console.log('✅ Found cookie for preview:', `#${cookie.cookieNumber}`);
+        console.log('⚠️ Cookie NOT assigned yet - waiting for confirmation');
+        
+        // Clean cookie value
+        let cleanValue = cookie.value;
+        if (cleanValue.startsWith('NetflixId=')) {
+            cleanValue = cleanValue.substring('NetflixId='.length);
+        }
+        
+        const cookieData = {
+            name: cookie.name,
+            value: cleanValue,
+            domain: cookie.domain,
+            path: cookie.path,
+            secure: cookie.secure,
+            httpOnly: cookie.httpOnly
+        };
+        
+        res.json({
+            success: true,
+            cookie: {
+                ...cookieData,
+                _id: cookie._id.toString()
+            },
+            cookieNumber: cookie.cookieNumber,
+            sharedUsers: cookie.currentUsers.length // Số user hiện tại (chưa +1)
+        });
+        
+    } catch (error) {
+        console.error('❌ Cookie preview error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/cookies/confirm - Confirm cookie assignment (gọi khi login success)
+router.post('/confirm', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { cookieId } = req.body;
+        
+        if (!cookieId) {
+            return res.status(400).json({ error: 'cookieId is required' });
+        }
+        
+        console.log('✅ Cookie CONFIRM request from user:', req.user.email);
+        console.log('🍪 Cookie ID:', cookieId);
+        
+        const cookie = await Cookie.findById(cookieId);
+        
+        if (!cookie) {
+            console.log('❌ Cookie not found:', cookieId);
+            return res.status(404).json({ error: 'Cookie not found' });
+        }
+        
+        if (!cookie.isActive) {
+            console.log('❌ Cookie is not active:', cookieId);
+            return res.status(410).json({ error: 'Cookie is no longer active' });
+        }
+        
+        // Check if cookie is expired
+        if (cookie.isExpired()) {
+            console.log('❌ Cookie expired:', cookieId);
+            return res.status(410).json({ error: 'Cookie expired' });
+        }
+        
+        // Assign cookie to user (tăng slot +1)
+        await cookie.assignToUser(userId);
+        
+        console.log(`✅ Cookie #${cookie.cookieNumber} CONFIRMED and assigned to user:`, req.user.email);
+        console.log(`📊 Cookie slot: ${cookie.currentUsers.length}/${cookie.maxUsers}`);
+        
+        res.json({
+            success: true,
+            message: 'Cookie confirmed and assigned successfully',
+            cookieNumber: cookie.cookieNumber,
+            sharedUsers: cookie.currentUsers.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Cookie confirm error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST /api/cookies/release - Release cookie từ user
 router.post('/release', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
         
         const cookie = await Cookie.findOne({ 
-            usedBy: userId, 
+            currentUsers: userId,
             isActive: true 
         });
         
@@ -198,7 +348,7 @@ router.post('/release', authenticateToken, async (req, res) => {
             });
         }
         
-        await cookie.releaseFromUser();
+        await cookie.releaseFromUser(userId);
         
         console.log('✅ Cookie released by user:', req.user.email);
         

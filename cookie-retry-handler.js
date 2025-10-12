@@ -44,7 +44,10 @@ class CookieRetryHandler {
                 const result = await this.injectCookieAndCheck(cookieData);
                 
                 if (result.success) {
-                    // Success!
+                    // Success! Confirm cookie assignment (tăng slot +1)
+                    console.log('🎉 Login successful! Confirming cookie assignment...');
+                    await this.confirmCookie(cookieData.cookieId);
+                    
                     if (onProgress) {
                         onProgress({
                             status: 'success',
@@ -55,7 +58,8 @@ class CookieRetryHandler {
                     return { success: true, cookieData };
                 }
                 
-                // Failed - mark cookie as dead
+                // Failed - mark cookie as dead (KHÔNG tăng slot)
+                console.log('❌ Login failed, marking cookie as dead...');
                 await this.markCookieAsDead(cookieData.cookieId, result.errorCode);
                 
                 // Add to used list
@@ -79,9 +83,9 @@ class CookieRetryHandler {
                 console.error(`❌ Attempt ${this.currentRetry} failed:`, error);
                 
                 if (this.currentRetry >= this.maxRetries) {
-                    // Out of retries - release any failed cookie assignment
-                    console.log('❌ Reached max retries, releasing failed cookies...');
-                    await this.releaseCookie();
+                    // Out of retries
+                    console.log('❌ Reached max retries');
+                    console.log('⚠️ No cookie was assigned (all failed)');
                     
                     if (onProgress) {
                         onProgress({
@@ -95,9 +99,9 @@ class CookieRetryHandler {
             }
         }
         
-        // Max retries reached - release cookies
-        console.log('❌ Max retries reached, releasing failed cookies...');
-        await this.releaseCookie();
+        // Max retries reached
+        console.log('❌ Max retries reached');
+        console.log('⚠️ No cookie was assigned (all failed)');
         
         return {
             success: false,
@@ -106,12 +110,12 @@ class CookieRetryHandler {
     }
     
     /**
-     * Get cookie from backend
+     * Get cookie from backend (PREVIEW - không assign)
      */
     async getCookieFromBackend() {
         try {
-            // Build URL with query params
-            const url = new URL(`${this.backendUrl}/api/cookies/guest`);
+            // Build URL with query params - dùng /preview thay vì /guest
+            const url = new URL(`${this.backendUrl}/api/cookies/preview`);
             
             // Skip current cookie when retrying
             if (this.currentRetry > 1) {
@@ -126,7 +130,8 @@ class CookieRetryHandler {
                 console.log(`🚫 Excluding ${this.usedCookies.size} failed cookie(s):`, [...this.usedCookies]);
             }
             
-            console.log('📤 Fetching cookie from:', url.toString());
+            console.log('📤 Fetching cookie PREVIEW from:', url.toString());
+            console.log('⚠️ Cookie will NOT be assigned until confirmed');
             
             const response = await fetch(url.toString(), {
                 method: 'GET',
@@ -144,7 +149,8 @@ class CookieRetryHandler {
             const data = await response.json();
             
             if (data.cookie) {
-                console.log(`✅ Received cookie #${data.cookieNumber} (ID: ${data.cookie._id})`);
+                console.log(`👀 Received cookie PREVIEW #${data.cookieNumber} (ID: ${data.cookie._id})`);
+                console.log(`📊 Current slots: ${data.sharedUsers}/4 (not incremented yet)`);
                 return {
                     cookieId: data.cookie._id || 'unknown',
                     cookieNumber: data.cookieNumber,
@@ -160,7 +166,7 @@ class CookieRetryHandler {
             return null;
             
         } catch (error) {
-            console.error('❌ Get cookie error:', error);
+            console.error('❌ Get cookie preview error:', error);
             throw error;
         }
     }
@@ -356,6 +362,41 @@ class CookieRetryHandler {
     }
     
     /**
+     * Confirm cookie assignment (gọi khi login success)
+     * Chỉ khi gọi method này, cookie mới được gán user và tăng slot +1
+     */
+    async confirmCookie(cookieId) {
+        try {
+            console.log('✅ Confirming cookie assignment...');
+            console.log('🍪 Cookie ID:', cookieId);
+            
+            const response = await fetch(`${this.backendUrl}/api/cookies/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                },
+                body: JSON.stringify({ cookieId })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.warn('⚠️ Failed to confirm cookie:', errorData.error);
+                return false;
+            }
+            
+            const data = await response.json();
+            console.log('✅ Cookie CONFIRMED successfully!');
+            console.log(`📊 Cookie #${data.cookieNumber} - Slots: ${data.sharedUsers}/4`);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Confirm cookie error:', error);
+            return false;
+        }
+    }
+    
+    /**
      * Mark cookie as dead in backend
      */
     async markCookieAsDead(cookieId, errorCode) {
@@ -374,6 +415,7 @@ class CookieRetryHandler {
             
             if (response.ok) {
                 console.log(`✅ Marked cookie ${cookieId} as dead (cookie die, recheck)`);
+                console.log(`⚠️ Cookie NOT assigned - slot unchanged`);
             }
             
         } catch (error) {
