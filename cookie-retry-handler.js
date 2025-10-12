@@ -215,6 +215,12 @@ class CookieRetryHandler {
     
     /**
      * Check Netflix login status via extension
+     * Logic: 
+     * 1. Nếu URL = /browse → Cookie LIVE ✅
+     * 2. Nếu có error NSES-500 → Refresh → Check lại
+     *    - Sau refresh vào /browse → Cookie LIVE ✅
+     *    - Sau refresh không vào /browse → Cookie DIE ❌
+     * 3. Nếu không phải /browse và không có error → Cookie DIE ❌
      */
     async checkNetflixLoginStatus() {
         try {
@@ -223,6 +229,8 @@ class CookieRetryHandler {
                 return { success: false, errorCode: 'NO_EXTENSION' };
             }
             
+            console.log('🔍 Checking Netflix login status...');
+            
             // Send message to extension to check Netflix tab status
             const response = await chrome.runtime.sendMessage(
                 window.CONFIG.EXTENSION_ID,
@@ -230,51 +238,56 @@ class CookieRetryHandler {
             );
             
             if (response && response.success) {
-                // Extension found Netflix tab and checked status
+                console.log('📊 Login status response:', response.loginStatus, response.url);
+                
+                // ✅ Case 1: Đã vào /browse → Cookie LIVE
                 if (response.loginStatus === 'success') {
+                    console.log('✅ URL is /browse → Cookie LIVE!');
                     return { success: true };
-                } else if (response.loginStatus === 'error') {
-                    console.log(`🔄 Detected error: ${response.errorCode}, trying refresh...`);
+                }
+                
+                // ⚠️ Case 2: Có error NSES-500 → Cần refresh và check lại
+                if (response.loginStatus === 'error') {
+                    console.log(`⚠️ Detected error: ${response.errorCode}`);
+                    console.log('🔄 Refreshing page to verify cookie...');
                     
                     // Update progress to show we're refreshing
                     if (window.showStepStatus) {
-                        window.showStepStatus(2, 'warning', `🔄 Phát hiện lỗi ${response.errorCode}, đang refresh trang...`);
+                        window.showStepStatus(2, 'warning', `🔄 Phát hiện lỗi ${response.errorCode}, đang refresh để kiểm tra...`);
                     }
                     
-                    // Try refresh page first before marking cookie as dead
+                    // Refresh và check lại
                     const refreshResult = await this.refreshAndRecheck();
-                    if (refreshResult.success) {
-                        return { success: true };
-                    }
                     
-                    // Still failed after refresh
-                    return {
-                        success: false,
-                        errorCode: response.errorCode || 'NETFLIX_ERROR'
-                    };
+                    if (refreshResult.success) {
+                        console.log('✅ Sau refresh vào /browse → Cookie LIVE!');
+                        return { success: true };
+                    } else {
+                        console.log('❌ Sau refresh vẫn không vào /browse → Cookie DIE!');
+                        return {
+                            success: false,
+                            errorCode: response.errorCode || 'NETFLIX_ERROR'
+                        };
+                    }
                 }
+                
+                // ❌ Case 3: Không vào /browse và không có error → Cookie DIE
+                console.log('❌ Not at /browse and no specific error → Cookie DIE!');
+                return {
+                    success: false,
+                    errorCode: 'NOT_BROWSING'
+                };
             }
             
-            // Fallback: assume login failed if no clear success
+            // Fallback: extension không trả lời hoặc lỗi
+            console.warn('⚠️ No valid response from extension');
             return {
                 success: false,
-                errorCode: 'LOGIN_CHECK_FAILED'
+                errorCode: 'NO_RESPONSE'
             };
             
         } catch (error) {
             console.error('❌ Check login status error:', error);
-            
-            // Fallback: try to check if Netflix tab exists and has /browse URL
-            try {
-                if (window.state?.netflixTabRef && !window.state.netflixTabRef.closed) {
-                    // Tab exists, assume success for now
-                    // In real implementation, we'd need better detection
-                    return { success: true };
-                }
-            } catch (tabError) {
-                console.warn('Tab check failed:', tabError);
-            }
-            
             return {
                 success: false,
                 errorCode: 'CHECK_FAILED',
