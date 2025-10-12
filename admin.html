@@ -924,6 +924,7 @@
                                 <th style="width: 100px;">Reg.date</th>
                                 <th style="width: 100px;">Pro Exp.</th>
                                 <th style="width: 100px;">Last login</th>
+                                <th style="width: 100px;">Đổi TK</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1004,6 +1005,11 @@
                             <input type="date" class="edit-mode" value="${proExpires}" style="display: none; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
                         </td>
                         <td>${lastLogin}</td>
+                        <td>
+                            <span style="color: ${(user.monthlyReportLimit || 5) > 2 ? '#10b981' : (user.monthlyReportLimit || 5) > 0 ? '#fbbf24' : '#ef4444'}; font-weight: 600;">
+                                ${user.monthlyReportLimit || 5}/5
+                            </span>
+                        </td>
                     </tr>
                 `;
             });

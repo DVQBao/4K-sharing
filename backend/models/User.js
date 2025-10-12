@@ -70,6 +70,14 @@ const userSchema = new mongoose.Schema({
         ref: 'Cookie',
         default: null
     },
+    monthlyReportLimit: {
+        type: Number,
+        default: 5
+    },
+    lastReportReset: {
+        type: Date,
+        default: Date.now
+    },
     loginHistory: [{
         ip: String,
         device: String,

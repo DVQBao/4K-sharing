@@ -538,12 +538,20 @@
                                 </div>
                             </div>
                             <div style="border-top: 1px solid rgba(229, 9, 20, 0.3); padding-top: 12px; margin-top: 12px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                     <span style="color: #ddd; font-size: 0.9rem;">🍪 Tài khoản số:</span>
                                     <span id="assignedCookie" style="color: #10b981; font-weight: 600; font-size: 0.95rem; font-family: monospace;">-</span>
                                 </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #ddd; font-size: 0.9rem;">🔄 Lần đổi còn lại:</span>
+                                    <span id="reportLimit" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">5/5</span>
+                                </div>
                             </div>
                         </div>
+
+                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); margin-bottom: 10px;">
+                            ⚠️ Báo hỏng cookie / Đổi tài khoản
+                        </button>
 
                         <button onclick="handleLogout()" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
                             🚪 Đăng xuất
@@ -753,6 +761,42 @@
         </div>
     </div>
 
+    <!-- Report Issue Modal -->
+    <div class="modal" id="reportIssueModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="margin-bottom: 20px; text-align: center;">⚠️ Báo hỏng cookie / Đổi tài khoản</h2>
+            
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.6;">
+                    <strong>⚠️ Lưu ý quan trọng:</strong><br>
+                    • Nếu kiểm tra thấy cookie vẫn dùng được, bạn có thể bị hạn chế vì lạm dụng.<br>
+                    • Mỗi tháng bạn chỉ có <strong>5 lần</strong> đổi tài khoản.<br>
+                    • Số lần còn lại: <strong id="reportLimitModal">5/5</strong>
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">Chọn lý do:</label>
+                <select id="reportReason" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                    <option value="">-- Chọn lý do --</option>
+                    <option value="household">Lỗi hộ gia đình (Household)</option>
+                    <option value="payment">Lỗi phương thức thanh toán (Payment)</option>
+                    <option value="other">Lý do khác</option>
+                </select>
+            </div>
+            
+            <div id="customReasonContainer" style="display: none; margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">Nhập lý do:</label>
+                <textarea id="customReason" placeholder="Mô tả chi tiết lý do..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; min-height: 80px;"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeReportIssueModal()">Hủy</button>
+                <button class="btn btn-danger" onclick="confirmReportIssue()">⚠️ Report & Chuyển tài khoản</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Ad Modal -->
     <div class="modal" id="adModal">
         <div class="modal-content">
@@ -815,6 +859,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     const cookieElement = document.getElementById('assignedCookie');
+                    const reportLimitElement = document.getElementById('reportLimit');
                     
                     if (data.cookieInfo && cookieElement) {
                         const { cookieNumber } = data.cookieInfo;
@@ -824,9 +869,111 @@
                         cookieElement.textContent = 'Chưa cấp';
                         cookieElement.style.color = '#ef4444';
                     }
+                    
+                    // Update report limit display
+                    if (data.user && reportLimitElement) {
+                        const limit = data.user.monthlyReportLimit || 0;
+                        reportLimitElement.textContent = `${limit}/5`;
+                        reportLimitElement.style.color = limit > 2 ? '#10b981' : limit > 0 ? '#fbbf24' : '#ef4444';
+                    }
                 }
             } catch (error) {
                 console.error('❌ Load cookie info error:', error);
+            }
+        }
+        
+        // ========================================
+        // REPORT ISSUE FUNCTIONS
+        // ========================================
+        
+        function showReportIssueModal() {
+            const modal = document.getElementById('reportIssueModal');
+            if (modal) {
+                modal.classList.add('active');
+                
+                // Update limit in modal
+                const reportLimitText = document.getElementById('reportLimit')?.textContent || '5/5';
+                const reportLimitModal = document.getElementById('reportLimitModal');
+                if (reportLimitModal) {
+                    reportLimitModal.textContent = reportLimitText;
+                }
+                
+                // Setup reason dropdown listener
+                const reasonSelect = document.getElementById('reportReason');
+                const customContainer = document.getElementById('customReasonContainer');
+                
+                reasonSelect.onchange = function() {
+                    if (this.value === 'other') {
+                        customContainer.style.display = 'block';
+                    } else {
+                        customContainer.style.display = 'none';
+                    }
+                };
+            }
+        }
+        
+        function closeReportIssueModal() {
+            const modal = document.getElementById('reportIssueModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.getElementById('reportReason').value = '';
+                document.getElementById('customReason').value = '';
+                document.getElementById('customReasonContainer').style.display = 'none';
+            }
+        }
+        
+        async function confirmReportIssue() {
+            const reason = document.getElementById('reportReason').value;
+            const customReason = document.getElementById('customReason').value;
+            
+            if (!reason) {
+                alert('❌ Vui lòng chọn lý do!');
+                return;
+            }
+            
+            if (reason === 'other' && !customReason.trim()) {
+                alert('❌ Vui lòng nhập lý do chi tiết!');
+                return;
+            }
+            
+            // Confirm action
+            const confirmed = confirm('⚠️ Bạn chắc chắn muốn báo lỗi và đổi tài khoản?\n\nHành động này sẽ giảm số lần đổi tài khoản còn lại của bạn.');
+            if (!confirmed) return;
+            
+            try {
+                // Call API to report issue
+                const response = await fetch('https://fourk-sharing.onrender.com/api/cookies/report-issue', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    },
+                    body: JSON.stringify({
+                        reason: reason,
+                        customReason: customReason
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    alert('❌ ' + (data.error || 'Có lỗi xảy ra'));
+                    return;
+                }
+                
+                // Success
+                alert(`✅ ${data.message}\n\nSố lần còn lại: ${data.remainingReports}/5`);
+                closeReportIssueModal();
+                
+                // Reload cookie info
+                await loadCookieInfo();
+                
+                // Trigger automatic cookie switch (giống như bấm "Watch as Guest")
+                alert('🔄 Hệ thống sẽ tự động chuyển sang tài khoản khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản mới.');
+                
+            } catch (error) {
+                console.error('❌ Report issue error:', error);
+                alert('❌ Có lỗi xảy ra: ' + error.message);
             }
         }
         

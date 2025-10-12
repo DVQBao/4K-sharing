@@ -444,6 +444,86 @@ router.post('/:id/report-failed', authenticateToken, async (req, res) => {
     }
 });
 
+// POST /api/cookies/report-issue - User báo lỗi cookie và yêu cầu đổi tài khoản
+router.post('/report-issue', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { reason, customReason } = req.body;
+        
+        console.log(`📢 User ${req.user.email} reporting cookie issue`);
+        console.log(`📋 Reason:`, reason, customReason);
+        
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Check if user has reached monthly limit
+        const now = new Date();
+        const lastReset = new Date(user.lastReportReset);
+        const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24);
+        
+        // Reset counter if more than 30 days
+        if (daysSinceReset >= 30) {
+            user.monthlyReportLimit = 5;
+            user.lastReportReset = now;
+            await user.save();
+            console.log('🔄 Reset monthly report limit to 5');
+        }
+        
+        // Check limit
+        if (user.monthlyReportLimit <= 0) {
+            console.log('❌ User reached monthly report limit');
+            return res.status(429).json({ 
+                error: 'Bạn đã hết lượt đổi tài khoản trong tháng này. Vui lòng liên hệ admin.',
+                remainingReports: 0
+            });
+        }
+        
+        // Find current cookie
+        const currentCookie = await Cookie.findOne({
+            currentUsers: userId,
+            isActive: true
+        });
+        
+        if (currentCookie) {
+            console.log(`📝 Marking current cookie #${currentCookie.cookieNumber} as reported`);
+            
+            // Build reason text
+            let reasonText = reason;
+            if (reason === 'other' && customReason) {
+                reasonText = customReason;
+            }
+            
+            // Mark cookie with user report
+            currentCookie.isActive = false;
+            currentCookie.notes = `cookie die, recheck - User report: ${reasonText} - By ${user.email} - ${new Date().toLocaleString('vi-VN')}`;
+            await currentCookie.save();
+            
+            console.log(`✅ Cookie #${currentCookie.cookieNumber} marked as reported`);
+        }
+        
+        // Decrease report limit
+        user.monthlyReportLimit -= 1;
+        await user.save();
+        
+        console.log(`✅ User report limit decreased: ${user.monthlyReportLimit} remaining`);
+        
+        res.json({
+            success: true,
+            message: 'Đã ghi nhận báo cáo. Hệ thống sẽ tự động chuyển sang tài khoản khác.',
+            remainingReports: user.monthlyReportLimit,
+            reportedCookie: currentCookie ? currentCookie.cookieNumber : null
+        });
+        
+    } catch (error) {
+        console.error('❌ Report issue error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST /api/cookies/release - Release cookie từ user
 router.post('/release', authenticateToken, async (req, res) => {
     try {
