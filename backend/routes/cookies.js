@@ -305,23 +305,37 @@ router.post('/confirm', authenticateToken, async (req, res) => {
         // BƯỚC 1: Tìm và release cookie cũ (nếu có)
         // ====================================
         const oldCookie = await Cookie.findOne({ 
-            currentUsers: userId,
-            isActive: true 
+            currentUsers: userId
         });
         
         if (oldCookie && oldCookie._id.toString() !== cookieId) {
             console.log(`🔄 User was using old cookie #${oldCookie.cookieNumber}, releasing it...`);
+            console.log(`📊 OLD Cookie BEFORE release: ${oldCookie.currentUsers.length}/${oldCookie.maxUsers} users`);
             
-            // Release user từ cookie cũ (giảm slot -1)
-            await oldCookie.releaseFromUser(userId);
-            console.log(`✅ Released user from old cookie #${oldCookie.cookieNumber}`);
-            console.log(`📊 Old cookie slot: ${oldCookie.currentUsers.length}/${oldCookie.maxUsers} (decreased)`);
+            // Release user từ cookie cũ - dùng $pull để chắc chắn
+            const updateResult = await Cookie.updateOne(
+                { _id: oldCookie._id },
+                { 
+                    $pull: { currentUsers: userId },
+                    isActive: false,
+                    notes: `cookie die, recheck (auto-replaced by #${cookieId.substring(0, 6)}) - ${new Date().toLocaleString('vi-VN')}`
+                }
+            );
             
-            // Mark old cookie as "Recheck" (die - cần kiểm tra lại)
-            oldCookie.isActive = false;
-            oldCookie.notes = `cookie die (auto-replaced by #${cookieId.substring(0, 6)}) - ${new Date().toLocaleString('vi-VN')}`;
-            await oldCookie.save();
-            console.log(`⚠️ Marked old cookie #${oldCookie.cookieNumber} as "Recheck" (isActive=false)`);
+            console.log(`✅ Update result:`, updateResult);
+            
+            // Fetch lại để verify
+            const updatedOldCookie = await Cookie.findById(oldCookie._id);
+            console.log(`📊 OLD Cookie AFTER release: ${updatedOldCookie.currentUsers.length}/${updatedOldCookie.maxUsers} users`);
+            console.log(`📝 OLD Cookie status: isActive=${updatedOldCookie.isActive}`);
+            console.log(`📝 OLD Cookie notes: ${updatedOldCookie.notes}`);
+            
+            if (updatedOldCookie.currentUsers.length === oldCookie.currentUsers.length) {
+                console.error(`❌ WARNING: User was NOT removed from old cookie! Still ${updatedOldCookie.currentUsers.length} users`);
+            } else {
+                console.log(`✅ User successfully removed from old cookie #${oldCookie.cookieNumber}`);
+            }
+            
         } else if (oldCookie && oldCookie._id.toString() === cookieId) {
             console.log(`ℹ️ User already using this cookie #${oldCookie.cookieNumber}, no need to release`);
         } else {
@@ -351,23 +365,32 @@ router.post('/confirm', authenticateToken, async (req, res) => {
         // ====================================
         // BƯỚC 3: Assign cookie mới (tăng slot +1)
         // ====================================
+        console.log(`📊 NEW Cookie BEFORE assign: ${newCookie.currentUsers.length}/${newCookie.maxUsers} users`);
+        
         await newCookie.assignToUser(userId);
-        console.log(`✅ Cookie #${newCookie.cookieNumber} CONFIRMED and assigned to user:`, req.user.email);
-        console.log(`📊 New cookie slot: ${newCookie.currentUsers.length}/${newCookie.maxUsers} (increased)`);
+        
+        // Fetch lại để verify
+        const verifiedNewCookie = await Cookie.findById(newCookie._id);
+        console.log(`📊 NEW Cookie AFTER assign: ${verifiedNewCookie.currentUsers.length}/${verifiedNewCookie.maxUsers} users`);
+        console.log(`✅ Cookie #${verifiedNewCookie.cookieNumber} CONFIRMED and assigned to user:`, req.user.email);
         
         // ====================================
         // BƯỚC 4: Cập nhật User.assignedCookie
         // ====================================
-        user.assignedCookie = newCookie._id;
+        user.assignedCookie = verifiedNewCookie._id;
         await user.save();
-        console.log(`✅ Updated user.assignedCookie to #${newCookie.cookieNumber}`);
+        console.log(`✅ Updated user.assignedCookie to #${verifiedNewCookie.cookieNumber}`);
+        console.log(`📋 Summary: Old cookie slot decreased, New cookie slot increased, User.assignedCookie updated`);
         
         res.json({
             success: true,
             message: 'Cookie confirmed and assigned successfully',
-            cookieNumber: newCookie.cookieNumber,
-            sharedUsers: newCookie.currentUsers.length,
-            replacedOldCookie: !!oldCookie
+            cookieNumber: verifiedNewCookie.cookieNumber,
+            sharedUsers: verifiedNewCookie.currentUsers.length,
+            replacedOldCookie: oldCookie ? {
+                cookieNumber: oldCookie.cookieNumber,
+                newStatus: 'die, recheck'
+            } : null
         });
         
     } catch (error) {
@@ -393,18 +416,26 @@ router.post('/:id/report-failed', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Cookie not found' });
         }
         
+        console.log(`📊 Cookie #${cookie.cookieNumber} BEFORE mark die:`);
+        console.log(`   - isActive: ${cookie.isActive}`);
+        console.log(`   - currentUsers: ${cookie.currentUsers.length}/${cookie.maxUsers}`);
+        console.log(`   - notes: ${cookie.notes || '(empty)'}`);
+        
         // Mark cookie as failed
         cookie.isActive = false;
         cookie.notes = `cookie die, recheck - Error: ${errorCode || 'UNKNOWN'} - Reported by ${req.user.email} - ${new Date().toLocaleString('vi-VN')}`;
         await cookie.save();
         
-        console.log(`✅ Marked cookie #${cookie.cookieNumber} as failed (die, recheck)`);
-        console.log(`📝 Notes: ${cookie.notes}`);
+        console.log(`✅ Cookie #${cookie.cookieNumber} AFTER mark die:`);
+        console.log(`   - isActive: ${cookie.isActive}`);
+        console.log(`   - currentUsers: ${cookie.currentUsers.length}/${cookie.maxUsers} (unchanged - not assigned)`);
+        console.log(`   - notes: ${cookie.notes}`);
         
         res.json({
             success: true,
             message: 'Cookie marked as failed successfully',
-            cookieNumber: cookie.cookieNumber
+            cookieNumber: cookie.cookieNumber,
+            status: 'die, recheck'
         });
         
     } catch (error) {
