@@ -376,6 +376,43 @@ router.post('/confirm', authenticateToken, async (req, res) => {
     }
 });
 
+// POST /api/cookies/:id/report-failed - User báo cáo cookie lỗi (không cần admin)
+router.post('/:id/report-failed', authenticateToken, async (req, res) => {
+    try {
+        const cookieId = req.params.id;
+        const { errorCode } = req.body;
+        const userId = req.user.userId;
+        
+        console.log(`⚠️ User ${req.user.email} reporting failed cookie:`, cookieId);
+        console.log(`📋 Error code:`, errorCode);
+        
+        const cookie = await Cookie.findById(cookieId);
+        
+        if (!cookie) {
+            console.log('❌ Cookie not found:', cookieId);
+            return res.status(404).json({ error: 'Cookie not found' });
+        }
+        
+        // Mark cookie as failed
+        cookie.isActive = false;
+        cookie.notes = `cookie die, recheck - Error: ${errorCode || 'UNKNOWN'} - Reported by ${req.user.email} - ${new Date().toLocaleString('vi-VN')}`;
+        await cookie.save();
+        
+        console.log(`✅ Marked cookie #${cookie.cookieNumber} as failed (die, recheck)`);
+        console.log(`📝 Notes: ${cookie.notes}`);
+        
+        res.json({
+            success: true,
+            message: 'Cookie marked as failed successfully',
+            cookieNumber: cookie.cookieNumber
+        });
+        
+    } catch (error) {
+        console.error('❌ Report failed cookie error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST /api/cookies/release - Release cookie từ user
 router.post('/release', authenticateToken, async (req, res) => {
     try {

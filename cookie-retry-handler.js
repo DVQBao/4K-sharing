@@ -397,25 +397,33 @@ class CookieRetryHandler {
     }
     
     /**
-     * Mark cookie as dead in backend
+     * Mark cookie as dead in backend (user endpoint - không cần admin)
      */
     async markCookieAsDead(cookieId, errorCode) {
         try {
-            const response = await fetch(`${this.backendUrl}/api/admin/cookies/${cookieId}`, {
-                method: 'PUT',
+            console.log(`⚠️ Reporting failed cookie to backend...`);
+            console.log(`🍪 Cookie ID: ${cookieId}`);
+            console.log(`❌ Error code: ${errorCode}`);
+            
+            const response = await fetch(`${this.backendUrl}/api/cookies/${cookieId}/report-failed`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.authToken}`
                 },
                 body: JSON.stringify({
-                    notes: `cookie die, recheck - Error: ${errorCode || 'UNKNOWN'} - ${new Date().toLocaleString('vi-VN')}`,
-                    isActive: false
+                    errorCode: errorCode || 'UNKNOWN'
                 })
             });
             
             if (response.ok) {
-                console.log(`✅ Marked cookie ${cookieId} as dead (cookie die, recheck)`);
+                const data = await response.json();
+                console.log(`✅ Cookie #${data.cookieNumber} marked as failed (die, recheck)`);
                 console.log(`⚠️ Cookie NOT assigned - slot unchanged`);
+                console.log(`📝 Status: isActive=false`);
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.warn(`⚠️ Failed to mark cookie as dead:`, errorData.error || response.status);
             }
             
         } catch (error) {
