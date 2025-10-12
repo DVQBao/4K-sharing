@@ -292,37 +292,82 @@ router.post('/confirm', authenticateToken, async (req, res) => {
         }
         
         console.log('✅ Cookie CONFIRM request from user:', req.user.email);
-        console.log('🍪 Cookie ID:', cookieId);
+        console.log('🍪 New Cookie ID:', cookieId);
         
-        const cookie = await Cookie.findById(cookieId);
+        const User = require('../models/User');
+        const user = await User.findById(userId);
         
-        if (!cookie) {
-            console.log('❌ Cookie not found:', cookieId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // ====================================
+        // BƯỚC 1: Tìm và release cookie cũ (nếu có)
+        // ====================================
+        const oldCookie = await Cookie.findOne({ 
+            currentUsers: userId,
+            isActive: true 
+        });
+        
+        if (oldCookie && oldCookie._id.toString() !== cookieId) {
+            console.log(`🔄 User was using old cookie #${oldCookie.cookieNumber}, releasing it...`);
+            
+            // Release user từ cookie cũ (giảm slot -1)
+            await oldCookie.releaseFromUser(userId);
+            console.log(`✅ Released user from old cookie #${oldCookie.cookieNumber}`);
+            console.log(`📊 Old cookie slot: ${oldCookie.currentUsers.length}/${oldCookie.maxUsers} (decreased)`);
+            
+            // Mark old cookie as "Recheck" (die - cần kiểm tra lại)
+            oldCookie.isActive = false;
+            oldCookie.notes = `cookie die (auto-replaced by #${cookieId.substring(0, 6)}) - ${new Date().toLocaleString('vi-VN')}`;
+            await oldCookie.save();
+            console.log(`⚠️ Marked old cookie #${oldCookie.cookieNumber} as "Recheck" (isActive=false)`);
+        } else if (oldCookie && oldCookie._id.toString() === cookieId) {
+            console.log(`ℹ️ User already using this cookie #${oldCookie.cookieNumber}, no need to release`);
+        } else {
+            console.log('ℹ️ User has no old cookie to release');
+        }
+        
+        // ====================================
+        // BƯỚC 2: Validate cookie mới
+        // ====================================
+        const newCookie = await Cookie.findById(cookieId);
+        
+        if (!newCookie) {
+            console.log('❌ New cookie not found:', cookieId);
             return res.status(404).json({ error: 'Cookie not found' });
         }
         
-        if (!cookie.isActive) {
-            console.log('❌ Cookie is not active:', cookieId);
+        if (!newCookie.isActive) {
+            console.log('❌ New cookie is not active:', cookieId);
             return res.status(410).json({ error: 'Cookie is no longer active' });
         }
         
-        // Check if cookie is expired
-        if (cookie.isExpired()) {
-            console.log('❌ Cookie expired:', cookieId);
+        if (newCookie.isExpired()) {
+            console.log('❌ New cookie expired:', cookieId);
             return res.status(410).json({ error: 'Cookie expired' });
         }
         
-        // Assign cookie to user (tăng slot +1)
-        await cookie.assignToUser(userId);
+        // ====================================
+        // BƯỚC 3: Assign cookie mới (tăng slot +1)
+        // ====================================
+        await newCookie.assignToUser(userId);
+        console.log(`✅ Cookie #${newCookie.cookieNumber} CONFIRMED and assigned to user:`, req.user.email);
+        console.log(`📊 New cookie slot: ${newCookie.currentUsers.length}/${newCookie.maxUsers} (increased)`);
         
-        console.log(`✅ Cookie #${cookie.cookieNumber} CONFIRMED and assigned to user:`, req.user.email);
-        console.log(`📊 Cookie slot: ${cookie.currentUsers.length}/${cookie.maxUsers}`);
+        // ====================================
+        // BƯỚC 4: Cập nhật User.assignedCookie
+        // ====================================
+        user.assignedCookie = newCookie._id;
+        await user.save();
+        console.log(`✅ Updated user.assignedCookie to #${newCookie.cookieNumber}`);
         
         res.json({
             success: true,
             message: 'Cookie confirmed and assigned successfully',
-            cookieNumber: cookie.cookieNumber,
-            sharedUsers: cookie.currentUsers.length
+            cookieNumber: newCookie.cookieNumber,
+            sharedUsers: newCookie.currentUsers.length,
+            replacedOldCookie: !!oldCookie
         });
         
     } catch (error) {

@@ -65,6 +65,11 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    assignedCookie: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Cookie',
+        default: null
+    },
     loginHistory: [{
         ip: String,
         device: String,
