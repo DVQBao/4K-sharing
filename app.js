@@ -522,6 +522,10 @@ async function handleStartWatching() {
             // Thành công!
             console.log('✅ Login successful, preparing to focus Netflix tab...');
             
+            // Clear any warning messages first
+            hideStepStatus(2);
+            showStepStatus(2, 'success', '✅ Đăng nhập thành công!');
+            
             if (elements.watchingIcon) elements.watchingIcon.textContent = '✅';
             if (elements.watchingProgress) {
                 elements.watchingProgress.textContent = 'Đăng nhập thành công! Đang chuyển sang Netflix...';
@@ -530,30 +534,53 @@ async function handleStartWatching() {
             showToast('🎉 Đăng nhập thành công!', 'success');
             
             // Focus vào tab Netflix - thử nhiều cách
+            console.log('🔄 Attempting to focus Netflix tab...');
+            
+            // Kiểm tra và thử tìm lại tab reference nếu cần
+            if (!state.netflixTabRef || state.netflixTabRef.closed) {
+                console.warn('⚠️ Tab reference lost, trying to find it again...');
+                try {
+                    // Thử mở lại với tên đã đặt (có thể tìm được tab hiện có)
+                    state.netflixTabRef = window.open('', CONFIG.NETFLIX_TAB_NAME);
+                } catch (e) {
+                    console.error('Cannot find tab:', e);
+                }
+            }
+            
             if (state.netflixTabRef && !state.netflixTabRef.closed) {
                 try {
-                    console.log('🔄 Attempting to focus Netflix tab...');
-                    
-                    // Cách 1: Focus trực tiếp
-                    state.netflixTabRef.focus();
-                    
-                    // Cách 2: Blur current window trước
+                    // Cách 1: Blur current window để Netflix tab có thể focus
                     window.blur();
-                    state.netflixTabRef.focus();
                     
-                    // Cách 3: Sử dụng postMessage để Netflix tab tự focus
+                    // Cách 2: Focus Netflix tab
+                    state.netflixTabRef.focus();
+                    console.log('✅ Netflix tab focus() called');
+                    
+                    // Cách 3: Thử navigate để force bring-to-front
                     try {
-                        state.netflixTabRef.postMessage({ action: 'focus' }, 'https://www.netflix.com');
+                        const currentUrl = state.netflixTabRef.location.href;
+                        if (currentUrl.includes('netflix.com')) {
+                            // Tab vẫn trên Netflix, chỉ cần focus
+                            state.netflixTabRef.focus();
+                        }
+                    } catch (e) {
+                        // Cross-origin - không thể đọc location, nhưng focus vẫn hoạt động
+                        console.log('Cross-origin tab, focus only');
+                    }
+                    
+                    // Cách 4: PostMessage để tab tự focus (nếu có listener)
+                    try {
+                        state.netflixTabRef.postMessage({ action: 'focus' }, '*');
                     } catch (e) {
                         console.log('Cannot postMessage:', e);
                     }
                     
-                    console.log('✅ Netflix tab focus command sent');
+                    console.log('✅ All focus methods attempted');
                 } catch (error) {
                     console.warn('⚠️ Cannot focus tab:', error);
                 }
             } else {
-                console.warn('⚠️ Netflix tab not found or closed');
+                console.warn('⚠️ Netflix tab not found or closed - user needs to switch manually');
             }
             
             // Đợi 1.5s để user thấy thông báo, rồi đóng modal
@@ -788,6 +815,7 @@ window.injectCookieViaExtension = injectCookieViaExtension;
 window.state = state;
 window.CONFIG = CONFIG;
 window.showStepStatus = showStepStatus;
+window.hideStepStatus = hideStepStatus;
 
 console.log(`
 ╔════════════════════════════════════════════════════╗

@@ -288,6 +288,15 @@ class CookieRetryHandler {
             
             if (response && response.success && response.loginStatus === 'success') {
                 console.log('✅ Success after refresh!');
+                
+                // Clear warning message
+                if (window.hideStepStatus) {
+                    window.hideStepStatus(2);
+                }
+                if (window.showStepStatus) {
+                    window.showStepStatus(2, 'success', '✅ Đăng nhập thành công sau khi refresh!');
+                }
+                
                 return { success: true };
             }
             
