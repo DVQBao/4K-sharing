@@ -35,12 +35,13 @@ const elements = {
     setupLink: document.getElementById('setupLink'),
     
     // Step buttons
-    openNetflixBtn: document.getElementById('openNetflixBtn'),
     watchAsGuestBtn: document.getElementById('watchAsGuestBtn'),
     
     // Step status
-    step1Status: document.getElementById('step1Status'),
     step2Status: document.getElementById('step2Status'),
+    
+    // Popup blocker warning
+    popupBlockerWarning: document.getElementById('popupBlockerWarning'),
     
     // Plan modal
     planModal: document.getElementById('planModal'),
@@ -107,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 
 function setupEventListeners() {
-    elements.openNetflixBtn.addEventListener('click', handleOpenNetflix);
     elements.watchAsGuestBtn.addEventListener('click', handleWatchAsGuest);
     elements.cancelBtn.addEventListener('click', closeAdModal);
     elements.startWatchingBtn.addEventListener('click', handleStartWatching);
@@ -178,71 +178,158 @@ function onExtensionNotDetected() {
 }
 
 // ========================================
-// STEP 1: MỞ NETFLIX TAB
+// LEGACY: STEP 1 (NO LONGER USED - AUTO MODE)
+// ========================================
+// handleOpenNetflix() function removed - now handled automatically in handleWatchAsGuest()
+
+// ========================================
+// HELPER FUNCTIONS FOR AUTO TAB MANAGEMENT
 // ========================================
 
 /**
- * Xử lý nút "Mở Netflix.com"
- * Kiểm tra và mở tab Netflix nếu chưa có
+ * Kiểm tra xem tab Netflix đã tồn tại chưa (qua extension)
+ * @returns {Promise<{exists: boolean, tabId: number|null}>}
  */
-function handleOpenNetflix() {
-    console.log('📍 Step 1: Opening Netflix tab...');
-    
-    // Reset status
-    hideStepStatus(1);
+async function checkExistingNetflixTab() {
+    if (!state.hasExtension || !CONFIG.EXTENSION_ID) {
+        console.log('ℹ️ Extension not available, checking window reference...');
+        // Fallback: check window reference
+        if (state.netflixTabRef && !state.netflixTabRef.closed) {
+            return { exists: true, tabId: null };
+        }
+        return { exists: false, tabId: null };
+    }
     
     try {
-        // Kiểm tra xem đã có tab Netflix chưa
-        if (state.netflixTabRef && !state.netflixTabRef.closed) {
-            // Tab đã tồn tại, focus vào tab đó
-            state.netflixTabRef.focus();
-            showStepStatus(1, 'success', '✅ Tab Netflix đã mở sẵn! Đã focus vào tab.');
-            console.log('✅ Netflix tab already open, focused');
-            return;
+        const response = await chrome.runtime.sendMessage(
+            CONFIG.EXTENSION_ID,
+            { action: 'getExistingNetflixTab' }
+        );
+        
+        if (response && response.success && response.tabExists) {
+            console.log(`✅ Existing Netflix tab found: ${response.tabId}`);
+            state.netflixTabId = response.tabId;
+            return { exists: true, tabId: response.tabId };
         }
         
-        // Mở tab mới
-        try {
-            state.netflixTabRef = window.open(
-                CONFIG.NETFLIX_URL,
-                CONFIG.NETFLIX_TAB_NAME
-            );
-            
-            // Check if popup was blocked
-            if (!state.netflixTabRef || state.netflixTabRef.closed) {
-                showStepStatus(1, 'error', '❌ Không thể mở tab. Vui lòng cho phép popup!');
-                showToast('Vui lòng cho phép popup cho trang này', 'error');
-                console.error('❌ Popup blocked');
-                return;
-            }
-        } catch (error) {
-            showStepStatus(1, 'error', '❌ Lỗi khi mở tab: ' + error.message);
-            console.error('❌ Error:', error);
-            return;
-        }
-        
-        // Gán window.name để dễ nhận diện
-        try {
-            state.netflixTabRef.name = CONFIG.NETFLIX_TAB_NAME;
-        } catch (error) {
-            console.warn('Cannot set window.name (cross-origin):', error);
-        }
-        
-        // Lưu timestamp
-        localStorage.setItem('netflixTabOpened', Date.now().toString());
-        
-        // Đợi tab load xong
-        setTimeout(() => {
-            showStepStatus(1, 'success', '✅ Đã mở Netflix tab thành công! Sẵn sàng cho bước 2.');
-            showToast('Đã mở Netflix xong!', 'success');
-            console.log('✅ Netflix tab opened successfully');
-        }, 1000);
+        console.log('ℹ️ No existing Netflix tab');
+        return { exists: false, tabId: null };
         
     } catch (error) {
-        console.error('❌ Error opening Netflix:', error);
-        showStepStatus(1, 'error', `❌ Lỗi: ${error.message}`);
-        showToast('Lỗi khi mở Netflix', 'error');
+        console.error('❌ Error checking existing tab:', error);
+        return { exists: false, tabId: null };
     }
+}
+
+/**
+ * Mở tab Netflix (qua extension hoặc window.open)
+ * @returns {Promise<{success: boolean, tabId: number|null, method: string}>}
+ */
+async function openNetflixTab() {
+    console.log('🚀 Opening Netflix tab...');
+    
+    // Method 1: Try extension first (more reliable)
+    if (state.hasExtension && CONFIG.EXTENSION_ID) {
+        try {
+            const response = await chrome.runtime.sendMessage(
+                CONFIG.EXTENSION_ID,
+                { action: 'openNetflixTab' }
+            );
+            
+            if (response && response.success) {
+                console.log(`✅ Netflix tab opened via extension: ${response.tabId}`);
+                state.netflixTabId = response.tabId;
+                return { 
+                    success: true, 
+                    tabId: response.tabId, 
+                    method: 'extension',
+                    wasExisting: response.wasExisting 
+                };
+            }
+        } catch (error) {
+            console.warn('⚠️ Extension method failed, trying window.open...', error);
+        }
+    }
+    
+    // Method 2: Fallback to window.open
+    try {
+        const newTab = window.open(
+            CONFIG.NETFLIX_URL,
+            CONFIG.NETFLIX_TAB_NAME
+        );
+        
+        // Check if popup was blocked
+        if (!newTab || newTab.closed) {
+            console.error('❌ Popup blocked by browser');
+            return { success: false, tabId: null, method: 'blocked' };
+        }
+        
+        state.netflixTabRef = newTab;
+        
+        // Try to set window name
+        try {
+            newTab.name = CONFIG.NETFLIX_TAB_NAME;
+        } catch (e) {
+            console.warn('Cannot set window.name (cross-origin)');
+        }
+        
+        console.log('✅ Netflix tab opened via window.open');
+        return { success: true, tabId: null, method: 'window.open' };
+        
+    } catch (error) {
+        console.error('❌ Error opening tab:', error);
+        return { success: false, tabId: null, method: 'error' };
+    }
+}
+
+/**
+ * Đảm bảo tab Netflix đã sẵn sàng (mở hoặc focus existing)
+ * @returns {Promise<boolean>} true nếu tab sẵn sàng
+ */
+async function ensureNetflixTabReady() {
+    console.log('🔍 Ensuring Netflix tab is ready...');
+    
+    // Step 1: Check if tab already exists
+    const existingCheck = await checkExistingNetflixTab();
+    
+    if (existingCheck.exists) {
+        console.log('✅ Netflix tab already exists, reusing it');
+        return true;
+    }
+    
+    // Step 2: Open new tab
+    console.log('📂 No existing tab, opening new one...');
+    const openResult = await openNetflixTab();
+    
+    if (!openResult.success) {
+        if (openResult.method === 'blocked') {
+            showToast('❌ Trình duyệt chặn popup! Vui lòng cho phép popup cho trang này.', 'error');
+            showStepStatus(2, 'error', '❌ Popup bị chặn. Vui lòng bật popup!');
+            
+            // Show popup blocker warning
+            const popupWarning = document.getElementById('popupBlockerWarning');
+            if (popupWarning) {
+                popupWarning.style.display = 'block';
+            }
+        } else {
+            showToast('❌ Không thể mở Netflix tab', 'error');
+            showStepStatus(2, 'error', '❌ Lỗi khi mở tab Netflix');
+        }
+        return false;
+    }
+    
+    // Hide popup blocker warning if it was shown
+    const popupWarning = document.getElementById('popupBlockerWarning');
+    if (popupWarning) {
+        popupWarning.style.display = 'none';
+    }
+    
+    // Step 3: Wait for tab to load
+    console.log('⏳ Waiting for tab to initialize...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    console.log('✅ Netflix tab ready!');
+    return true;
 }
 
 // ========================================
@@ -251,28 +338,26 @@ function handleOpenNetflix() {
 
 /**
  * Xử lý nút "Watch as Guest"
- * Hiển thị modal chọn gói: Free (ad) hoặc Pro (20k/tháng)
+ * TỰ ĐỘNG mở tab Netflix (nếu chưa có) rồi tiếp tục flow
  */
-function handleWatchAsGuest() {
-    console.log('📍 Step 2: Starting guest flow...');
+async function handleWatchAsGuest() {
+    console.log('📍 Starting Watch as Guest flow (AUTO mode)...');
     
     // Reset status
     hideStepStatus(2);
     
-    // Kiểm tra xem đã mở Netflix chưa
-    if (!state.netflixTabRef || state.netflixTabRef.closed) {
-        showStepStatus(2, 'error', '❌ Chưa mở Netflix! Vui lòng bấm bước 1 trước.');
-        showToast('Vui lòng mở Netflix tab trước (Bước 1)', 'warning');
-        console.error('❌ Netflix tab not found');
-        
-        // Highlight bước 1
-        elements.openNetflixBtn.style.animation = 'pulse 1s ease 3';
-        setTimeout(() => {
-            elements.openNetflixBtn.style.animation = '';
-        }, 3000);
-        
-        return;
+    // ===== BƯỚC TỰ ĐỘNG: ĐẢM BẢO TAB NETFLIX SẴN SÀNG =====
+    showStepStatus(2, 'warning', '⏳ Đang chuẩn bị Netflix tab...');
+    
+    const tabReady = await ensureNetflixTabReady();
+    
+    if (!tabReady) {
+        console.error('❌ Failed to prepare Netflix tab');
+        return; // Error messages already shown in ensureNetflixTabReady
     }
+    
+    console.log('✅ Netflix tab is ready, continuing flow...');
+    hideStepStatus(2);
     
     // Kiểm tra extension
     if (!state.hasExtension) {

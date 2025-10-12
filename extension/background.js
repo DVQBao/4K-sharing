@@ -246,6 +246,91 @@ chrome.runtime.onMessageExternal.addListener(
             return true; // Keep channel open for async response
         }
         
+        // Handle getExistingNetflixTab request - Check if Netflix tab exists
+        if (request.action === 'getExistingNetflixTab') {
+            (async () => {
+                try {
+                    const tabs = await chrome.tabs.query({
+                        url: '*://*.netflix.com/*'
+                    });
+                    
+                    if (tabs.length > 0) {
+                        console.log(`✅ Found existing Netflix tab: ${tabs[0].id}`);
+                        sendResponse({ 
+                            success: true,
+                            tabId: tabs[0].id,
+                            tabExists: true
+                        });
+                    } else {
+                        console.log('ℹ️ No existing Netflix tab found');
+                        sendResponse({ 
+                            success: true,
+                            tabExists: false
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Get existing Netflix tab error:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message 
+                    });
+                }
+            })();
+            
+            return true;
+        }
+        
+        // Handle openNetflixTab request - Open or focus Netflix tab
+        if (request.action === 'openNetflixTab') {
+            (async () => {
+                try {
+                    console.log('🚀 Opening/focusing Netflix tab...');
+                    
+                    // First check if tab already exists
+                    const existingTabs = await chrome.tabs.query({
+                        url: '*://*.netflix.com/*'
+                    });
+                    
+                    if (existingTabs.length > 0) {
+                        // Tab exists, focus it
+                        const tab = existingTabs[0];
+                        await chrome.tabs.update(tab.id, { active: true });
+                        await chrome.windows.update(tab.windowId, { focused: true });
+                        console.log(`✅ Focused existing Netflix tab: ${tab.id}`);
+                        sendResponse({ 
+                            success: true,
+                            tabId: tab.id,
+                            wasExisting: true
+                        });
+                    } else {
+                        // Create new tab
+                        const newTab = await chrome.tabs.create({
+                            url: 'https://www.netflix.com',
+                            active: true
+                        });
+                        console.log(`✅ Created new Netflix tab: ${newTab.id}`);
+                        
+                        // Wait a bit for tab to initialize
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        sendResponse({ 
+                            success: true,
+                            tabId: newTab.id,
+                            wasExisting: false
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Open Netflix tab error:', error);
+                    sendResponse({ 
+                        success: false, 
+                        error: error.message 
+                    });
+                }
+            })();
+            
+            return true;
+        }
+        
         return false;
     }
 );

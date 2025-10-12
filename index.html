@@ -464,28 +464,28 @@
                         </div>
 
                         <div class="step-flow">
-                            <!-- Step 1: Open Netflix -->
-                            <div class="step">
+                            <!-- Single Step: Watch as Guest (Auto opens Netflix) -->
+                            <div class="step" style="max-width: 600px; margin: 0 auto;">
                                 <div class="step-header">
-                                    <span class="step-number">1</span>
-                                    <span class="step-title">Mở Netflix.com</span>
+                                    <span class="step-number">⚡</span>
+                                    <span class="step-title">Xem Netflix ngay</span>
                                 </div>
-                                <button class="btn" id="openNetflixBtn">
-                                    🌐 Mở Netflix Tab
-                                </button>
-                                <div class="step-status" id="step1Status"></div>
-                            </div>
-
-                            <!-- Step 2: Watch Ad & Inject -->
-                            <div class="step">
-                                <div class="step-header">
-                                    <span class="step-number">2</span>
-                                    <span class="step-title">Xem quảng cáo & bắt đầu</span>
-                                </div>
-                                <button class="btn" id="watchAsGuestBtn">
-                                    📺 Watch as Guest
+                                <p style="color: #aaa; font-size: 0.9rem; margin: 15px 0; text-align: center; line-height: 1.6;">
+                                    Nhấn nút bên dưới để tự động mở Netflix và bắt đầu xem.<br>
+                                    <small style="color: #888;">Hệ thống sẽ tự động xử lý mọi thứ cho bạn!</small>
+                                </p>
+                                <button class="btn" id="watchAsGuestBtn" style="font-size: 1.1rem; padding: 15px 30px;">
+                                    ⚡ Watch as Guest
                                 </button>
                                 <div class="step-status" id="step2Status"></div>
+                                
+                                <!-- Popup blocker warning (hidden by default) -->
+                                <div id="popupBlockerWarning" style="display: none; margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+                                    <p style="margin: 0; font-size: 0.9rem; color: #fca5a5;">
+                                        ⚠️ <strong>Popup bị chặn!</strong><br>
+                                        Vui lòng cho phép popup cho trang này, sau đó thử lại.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
