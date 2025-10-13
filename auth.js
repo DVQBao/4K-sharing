@@ -281,7 +281,44 @@ async function handleRegister(event) {
                 window.location.href = 'index.html';
             }, 1000);
         } else {
-            showError(`❌ ${data.error || 'Đăng ký thất bại!'}`);
+            // Handle duplicate IP registration with detailed message
+            if (data.error === 'DUPLICATE_IP_REGISTRATION' && data.existingAccount) {
+                const account = data.existingAccount;
+                const message = `
+🚫 THIẾT BỊ ĐÃ ĐƯỢC ĐĂNG KÝ
+
+Thiết bị này đã được đăng ký trước đó vào ngày:
+📅 ${account.registrationDate}
+
+📋 THÔNG TIN TÀI KHOẢN ĐÃ TẠO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 Họ tên: ${account.name}
+📧 Email: ${account.email}
+🌐 IP: ${account.registrationIP || 'N/A'}
+💻 Thiết bị: ${account.registrationDevice || 'N/A'}
+📍 Vị trí: ${account.registrationLocation || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ VUI LÒNG:
+• Dùng tài khoản này để đăng nhập
+• Nếu quên mật khẩu, liên hệ hỗ trợ để reset
+
+📞 HỖ TRỢ: Liên hệ admin để được hỗ trợ
+                `.trim();
+                
+                alert(message);
+                
+                // Auto switch to login tab
+                setTimeout(() => {
+                    showLoginForm();
+                    document.getElementById('loginEmail').value = account.email;
+                    document.getElementById('loginEmail').focus();
+                }, 500);
+                
+            } else {
+                showError(`❌ ${data.error || data.message || 'Đăng ký thất bại!'}`);
+            }
         }
     } catch (error) {
         console.error('❌ Registration error:', error);

@@ -40,21 +40,38 @@ router.post('/register', async (req, res) => {
         console.log(`📝 New registration attempt from IP: ${ip}, Device: ${device}, Location: ${location}`);
         
         // ====================================
-        // Anti-spam: Check registrations from same IP in last 24h
+        // Anti-spam: Check registrations from same IP (STRICT: 1 account per IP)
         // ====================================
-        const MAX_REGISTRATIONS_PER_IP = 3; // Allow max 3 accounts per IP per day
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const MAX_REGISTRATIONS_PER_IP = 1; // STRICT: Only 1 account per IP (lifetime)
         
-        const recentRegistrations = await User.countDocuments({
-            registrationIP: ip,
-            createdAt: { $gte: oneDayAgo }
-        });
+        // Find existing account from this IP
+        const existingAccount = await User.findOne({
+            registrationIP: ip
+        }).select('name email createdAt registrationIP registrationDevice registrationLocation');
         
-        if (recentRegistrations >= MAX_REGISTRATIONS_PER_IP && ip !== 'Unknown' && !ip.includes('Local')) {
-            console.log(`⚠️ Registration blocked: IP ${ip} exceeded limit (${recentRegistrations}/${MAX_REGISTRATIONS_PER_IP})`);
-            return res.status(429).json({ 
-                error: `Bạn đã tạo quá nhiều tài khoản từ máy này (${recentRegistrations}/${MAX_REGISTRATIONS_PER_IP}). Vui lòng thử lại sau 24 giờ.`,
-                retryAfter: '24 hours'
+        if (existingAccount && ip !== 'Unknown' && !ip.includes('Local')) {
+            console.log(`⚠️ Registration blocked: IP ${ip} already has an account (${existingAccount.email})`);
+            
+            // Format date for display
+            const registrationDate = new Date(existingAccount.createdAt).toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return res.status(409).json({ 
+                error: 'DUPLICATE_IP_REGISTRATION',
+                message: `Thiết bị này đã được đăng ký trước đó vào ngày ${registrationDate}.\n\nThông tin đăng ký:\n  • Họ tên: ${existingAccount.name}\n  • Email: ${existingAccount.email}\n\nVui lòng dùng tài khoản này để đăng nhập.\nNếu quên mật khẩu, xin liên hệ hỗ trợ để được reset.`,
+                existingAccount: {
+                    name: existingAccount.name,
+                    email: existingAccount.email,
+                    registrationDate: registrationDate,
+                    registrationIP: existingAccount.registrationIP,
+                    registrationDevice: existingAccount.registrationDevice,
+                    registrationLocation: existingAccount.registrationLocation
+                }
             });
         }
         
