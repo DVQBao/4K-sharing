@@ -19,7 +19,7 @@ router.use(authenticateAdmin);
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, plan, proExpiresAt, isLocked } = req.body;
+        const { name, email, plan, proExpiresAt, isLocked, monthlyReportLimit } = req.body;
         
         const user = await User.findById(id);
         if (!user) {
@@ -39,6 +39,10 @@ router.put('/:id', async (req, res) => {
         }
         if (typeof isLocked === 'boolean') {
             user.isLocked = isLocked;
+        }
+        if (typeof monthlyReportLimit === 'number' && monthlyReportLimit >= 0 && monthlyReportLimit <= 5) {
+            user.monthlyReportLimit = monthlyReportLimit;
+            console.log(`📊 Updated monthlyReportLimit for ${user.email}: ${monthlyReportLimit}`);
         }
         
         await user.save();

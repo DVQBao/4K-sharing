@@ -783,8 +783,9 @@
             const plan = inputs[3].value;
             const cookieId = inputs[4].value; // Dropdown value là cookieId, không phải cookieNumber
             const proExpiresAt = inputs[5].value;
+            const monthlyReportLimit = parseInt(inputs[6].value); // Monthly report limit (0-5)
             
-            console.log('💾 Saving user row...', { name, email, plan, cookieId, proExpiresAt });
+            console.log('💾 Saving user row...', { name, email, plan, cookieId, proExpiresAt, monthlyReportLimit });
             
             // Validate
             if (!name || !email) {
@@ -797,6 +798,11 @@
                 return;
             }
             
+            if (isNaN(monthlyReportLimit) || monthlyReportLimit < 0 || monthlyReportLimit > 5) {
+                alert('❌ Số lần đổi TK phải từ 0 đến 5!');
+                return;
+            }
+            
             try {
                 // Show loading on save button
                 const saveBtn = row.querySelector('.save-btn');
@@ -805,7 +811,7 @@
                 saveBtn.disabled = true;
                 
                 // Prepare update data
-                const updateData = { name, email, plan, proExpiresAt };
+                const updateData = { name, email, plan, proExpiresAt, monthlyReportLimit };
                 
                 // Update user info
                 const response = await fetch(`${BACKEND_URL}/api/admin-users/${userId}`, {
@@ -1007,9 +1013,10 @@
                         </td>
                         <td>${lastLogin}</td>
                         <td>
-                            <span style="color: ${(user.monthlyReportLimit || 5) > 2 ? '#10b981' : (user.monthlyReportLimit || 5) > 0 ? '#fbbf24' : '#ef4444'}; font-weight: 600;">
-                                ${user.monthlyReportLimit || 5}/5
+                            <span class="view-mode" style="color: ${(user.monthlyReportLimit !== undefined ? user.monthlyReportLimit : 5) > 2 ? '#10b981' : (user.monthlyReportLimit !== undefined ? user.monthlyReportLimit : 5) > 0 ? '#fbbf24' : '#ef4444'}; font-weight: 600;">
+                                ${user.monthlyReportLimit !== undefined ? user.monthlyReportLimit : 5}/5
                             </span>
+                            <input type="number" class="edit-mode" value="${user.monthlyReportLimit !== undefined ? user.monthlyReportLimit : 5}" min="0" max="5" style="display: none; width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
                         </td>
                     </tr>
                 `;
