@@ -960,10 +960,10 @@
                     cookieOptions += `<option value="${c._id}" ${selected}>Cookie #${c.cookieNumber} (${userCount}/4)</option>`;
                 });
                 
-                // IP, Device, Location
-                const ip = user.lastLoginIP || '-';
-                const device = user.lastLoginDevice || '-';
-                const location = user.lastLoginLocation || '-';
+                // IP, Device, Location (prioritize registrationIP for users who never logged in)
+                const ip = user.registrationIP || user.lastLoginIP || '-';
+                const device = user.registrationDevice || user.lastLoginDevice || '-';
+                const location = user.registrationLocation || user.lastLoginLocation || '-';
 
                 tableHTML += `
                     <tr data-user-id="${user._id}" id="row-${user._id}">

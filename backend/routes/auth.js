@@ -66,7 +66,12 @@ router.post('/register', async (req, res) => {
             provider: provider || 'local',
             registrationIP: ip,
             registrationDevice: device,
-            registrationLocation: location
+            registrationLocation: location,
+            // Auto-login on registration: Update lastLogin fields
+            lastLogin: new Date(),
+            lastLoginIP: ip,
+            lastLoginDevice: device,
+            lastLoginLocation: location
         });
         
         // Add to login history
