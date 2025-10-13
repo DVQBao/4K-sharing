@@ -228,5 +228,156 @@ router.get('/:id/login-history', async (req, res) => {
     }
 });
 
+// ========================================
+// POST /api/admin-users/auto-assign - Auto-assign cookies to users without cookie
+// ========================================
+
+router.post('/auto-assign', async (req, res) => {
+    try {
+        console.log('\n🤖 ========== AUTO-ASSIGN COOKIES START ==========');
+        
+        // ====================================
+        // BƯỚC 1: Tìm tất cả users chưa có cookie
+        // ====================================
+        const usersWithoutCookie = await User.find({
+            $or: [
+                { assignedCookie: null },
+                { assignedCookie: { $exists: false } }
+            ]
+        });
+        
+        console.log(`📊 Found ${usersWithoutCookie.length} users without cookie`);
+        
+        if (usersWithoutCookie.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Tất cả users đã có cookie',
+                assigned: 0,
+                failed: 0,
+                details: []
+            });
+        }
+        
+        // ====================================
+        // BƯỚC 2: Tìm tất cả cookies còn slot
+        // ====================================
+        const availableCookies = await Cookie.find({ 
+            isActive: true,
+            $expr: { $lt: [{ $size: "$currentUsers" }, "$maxUsers"] }
+        }).sort({ currentUsers: 1, cookieNumber: 1 }); // Ưu tiên cookie ít users nhất
+        
+        console.log(`🍪 Found ${availableCookies.length} cookies with available slots`);
+        
+        if (availableCookies.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Không có cookie nào còn slot trống',
+                assigned: 0,
+                failed: usersWithoutCookie.length,
+                details: usersWithoutCookie.map(u => ({
+                    user: u.email,
+                    status: 'failed',
+                    reason: 'No available cookies'
+                }))
+            });
+        }
+        
+        // ====================================
+        // BƯỚC 3: Tự động gán cookie cho users
+        // ====================================
+        const results = {
+            assigned: 0,
+            failed: 0,
+            details: []
+        };
+        
+        for (const user of usersWithoutCookie) {
+            try {
+                // Tìm cookie còn slot
+                let assignedCookie = null;
+                
+                for (const cookie of availableCookies) {
+                    // Refresh cookie data để đảm bảo currentUsers là mới nhất
+                    const freshCookie = await Cookie.findById(cookie._id);
+                    
+                    if (freshCookie && freshCookie.currentUsers.length < freshCookie.maxUsers) {
+                        assignedCookie = freshCookie;
+                        break;
+                    }
+                }
+                
+                if (!assignedCookie) {
+                    console.log(`❌ No slot available for user: ${user.email}`);
+                    results.failed++;
+                    results.details.push({
+                        user: user.email,
+                        status: 'failed',
+                        reason: 'No available slots'
+                    });
+                    continue;
+                }
+                
+                // ====================================
+                // BƯỚC 3A: Release user from ALL old cookies (nếu có)
+                // ====================================
+                await Cookie.updateMany(
+                    { currentUsers: user._id },
+                    { $pull: { currentUsers: user._id } }
+                );
+                
+                // ====================================
+                // BƯỚC 3B: Assign user to new cookie
+                // ====================================
+                if (!assignedCookie.currentUsers.some(uid => uid.toString() === user._id.toString())) {
+                    assignedCookie.currentUsers.push(user._id);
+                    assignedCookie.lastUsed = new Date();
+                    assignedCookie.usageCount += 1;
+                    await assignedCookie.save();
+                }
+                
+                // ====================================
+                // BƯỚC 3C: Update user.assignedCookie
+                // ====================================
+                user.assignedCookie = assignedCookie._id;
+                await user.save();
+                
+                console.log(`✅ Assigned Cookie #${assignedCookie.cookieNumber} to ${user.email}`);
+                results.assigned++;
+                results.details.push({
+                    user: user.email,
+                    status: 'success',
+                    cookieNumber: assignedCookie.cookieNumber
+                });
+                
+            } catch (err) {
+                console.error(`❌ Error assigning cookie to ${user.email}:`, err);
+                results.failed++;
+                results.details.push({
+                    user: user.email,
+                    status: 'error',
+                    reason: err.message
+                });
+            }
+        }
+        
+        console.log(`\n📊 AUTO-ASSIGN RESULTS:`);
+        console.log(`   ✅ Assigned: ${results.assigned}`);
+        console.log(`   ❌ Failed: ${results.failed}`);
+        console.log('🤖 ========== AUTO-ASSIGN COOKIES END ==========\n');
+        
+        res.json({
+            success: true,
+            message: `Đã tự động gán ${results.assigned} cookies`,
+            assigned: results.assigned,
+            failed: results.failed,
+            details: results.details
+        });
+        
+    } catch (error) {
+        console.error('❌ Auto-assign cookies error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
 

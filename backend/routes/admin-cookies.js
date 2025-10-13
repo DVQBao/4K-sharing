@@ -221,13 +221,31 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
 // DELETE /api/admin/cookies/delete-all - Xóa tất cả cookies
 router.delete('/delete-all', authenticateAdmin, async (req, res) => {
     try {
+        const User = require('../models/User');
+        
+        console.log(`🗑️ Starting delete all cookies...`);
+        
+        // ====================================
+        // BƯỚC 1: Clear assignedCookie của TẤT CẢ users
+        // ====================================
+        const updateResult = await User.updateMany(
+            { assignedCookie: { $ne: null } }, // Tìm users có assignedCookie
+            { $set: { assignedCookie: null } } // Set assignedCookie = null
+        );
+        
+        console.log(`✅ Cleared assignedCookie for ${updateResult.modifiedCount} users`);
+        
+        // ====================================
+        // BƯỚC 2: Xóa tất cả cookies
+        // ====================================
         const result = await Cookie.deleteMany({});
-        console.log(`🗑️ Deleted all cookies: ${result.deletedCount} cookies`);
+        console.log(`✅ Deleted all cookies: ${result.deletedCount} cookies`);
         
         res.json({
             success: true,
-            message: `Deleted ${result.deletedCount} cookies`,
-            count: result.deletedCount
+            message: `Deleted ${result.deletedCount} cookies and cleared ${updateResult.modifiedCount} user assignments`,
+            cookiesDeleted: result.deletedCount,
+            usersAffected: updateResult.modifiedCount
         });
     } catch (error) {
         console.error('❌ Delete all cookies error:', error);
@@ -239,18 +257,43 @@ router.delete('/delete-all', authenticateAdmin, async (req, res) => {
 router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
         const { id } = req.params;
+        const User = require('../models/User');
         
-        const cookie = await Cookie.findByIdAndDelete(id);
+        console.log(`🗑️ Deleting cookie: ${id}`);
+        
+        // ====================================
+        // BƯỚC 1: Tìm cookie để xóa
+        // ====================================
+        const cookie = await Cookie.findById(id);
         
         if (!cookie) {
             return res.status(404).json({ error: 'Cookie not found' });
         }
         
-        console.log('✅ Cookie deleted by admin:', id);
+        console.log(`📊 Cookie #${cookie.cookieNumber} has ${cookie.currentUsers.length} users assigned`);
+        
+        // ====================================
+        // BƯỚC 2: Clear assignedCookie của tất cả users đang dùng cookie này
+        // ====================================
+        const updateResult = await User.updateMany(
+            { assignedCookie: id }, // Tìm users có assignedCookie trùng với cookie này
+            { $set: { assignedCookie: null } } // Set assignedCookie = null
+        );
+        
+        console.log(`✅ Cleared assignedCookie for ${updateResult.modifiedCount} users`);
+        
+        // ====================================
+        // BƯỚC 3: Xóa cookie khỏi hệ thống
+        // ====================================
+        await Cookie.findByIdAndDelete(id);
+        
+        console.log(`✅ Cookie #${cookie.cookieNumber} deleted successfully`);
         
         res.json({
             success: true,
-            message: 'Cookie deleted successfully'
+            message: 'Cookie deleted successfully',
+            usersAffected: updateResult.modifiedCount,
+            cookieNumber: cookie.cookieNumber
         });
         
     } catch (error) {

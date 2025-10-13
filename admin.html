@@ -444,6 +444,7 @@
             <button class="btn btn-secondary" onclick="exportUsers()">📊 Xuất Excel</button>
             <button class="btn btn-warning" onclick="showImportCookiesModal()">📁 Import Cookies từ File</button>
             <button class="btn btn-info" onclick="showCookieManagement()">🔧 Quản lý Cookies</button>
+            <button class="btn btn-success" onclick="autoAssignCookies()" style="background: linear-gradient(135deg, #667eea, #764ba2); border: none;">🤖 Auto Assign</button>
             <a href="index.html" class="btn btn-success">🏠 Về trang chủ</a>
         </div>
 
@@ -1553,6 +1554,64 @@
             } catch (error) {
                 console.error('❌ Delete cookie error:', error);
                 showMessage('❌ Lỗi kết nối!', 'error');
+            }
+        }
+        
+        // ========================================
+        // Auto-Assign Cookies Function
+        // ========================================
+        
+        async function autoAssignCookies() {
+            if (!confirm('🤖 TỰ ĐỘNG GÁN COOKIE\n\nHệ thống sẽ:\n✅ Tìm tất cả users chưa có cookie\n✅ Tìm cookies còn slot trống\n✅ Tự động gán cookie cho từng user\n\nBạn có muốn tiếp tục?')) {
+                return;
+            }
+            
+            try {
+                showMessage('🤖 Đang tự động gán cookies...', 'info');
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin-users/auto-assign`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Build detailed message
+                    let message = `✅ TỰ ĐỘNG GÁN COOKIE HOÀN TẤT!\n\n`;
+                    message += `✅ Đã gán: ${data.assigned} users\n`;
+                    message += `❌ Thất bại: ${data.failed} users\n\n`;
+                    
+                    if (data.details && data.details.length > 0 && data.details.length <= 20) {
+                        message += `CHI TIẾT:\n`;
+                        data.details.forEach(detail => {
+                            if (detail.status === 'success') {
+                                message += `✅ ${detail.user} → Cookie #${detail.cookieNumber}\n`;
+                            } else {
+                                message += `❌ ${detail.user} → ${detail.reason}\n`;
+                            }
+                        });
+                    } else if (data.details && data.details.length > 20) {
+                        message += `(Chi tiết quá nhiều, xem console logs)\n`;
+                        console.log('Auto-assign details:', data.details);
+                    }
+                    
+                    showMessage(data.message, 'success');
+                    alert(message);
+                    
+                    // Reload users & stats
+                    loadUsers();
+                    loadStats();
+                } else {
+                    showMessage(data.error || data.message || 'Lỗi khi tự động gán cookies', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Auto-assign cookies error:', error);
+                showMessage('Lỗi kết nối server!', 'error');
             }
         }
         
