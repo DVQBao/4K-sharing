@@ -5,19 +5,71 @@
 
 /**
  * Get client IP address from request
+ * Priority: Cloudflare → X-Real-IP → X-Forwarded-For → Direct IP
  */
 function getClientIP(req) {
-    // Try various headers for IP (for proxies/load balancers)
-    const forwarded = req.headers['x-forwarded-for'];
-    if (forwarded) {
-        return forwarded.split(',')[0].trim();
+    // Priority 1: Cloudflare CF-Connecting-IP (most reliable behind CF)
+    let ip = req.headers['cf-connecting-ip'];
+    if (ip && !isPrivateIP(ip)) {
+        return ip;
     }
     
-    return req.headers['x-real-ip'] || 
-           req.connection?.remoteAddress || 
-           req.socket?.remoteAddress || 
-           req.ip || 
-           'Unknown';
+    // Priority 2: X-Real-IP (nginx/reverse proxy)
+    ip = req.headers['x-real-ip'];
+    if (ip && !isPrivateIP(ip)) {
+        return ip;
+    }
+    
+    // Priority 3: X-Forwarded-For (may contain chain, take first public IP)
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+        const ips = forwarded.split(',').map(ip => ip.trim());
+        for (const candidateIP of ips) {
+            if (!isPrivateIP(candidateIP)) {
+                return candidateIP;
+            }
+        }
+    }
+    
+    // Priority 4: Direct connection IP
+    ip = req.connection?.remoteAddress || 
+         req.socket?.remoteAddress || 
+         req.ip;
+    
+    return ip || 'Unknown';
+}
+
+/**
+ * Check if IP is private/local
+ */
+function isPrivateIP(ip) {
+    if (!ip || ip === 'Unknown') return true;
+    
+    // Remove IPv6 prefix if present
+    ip = ip.replace(/^::ffff:/, '');
+    
+    // Private IP ranges
+    return ip.startsWith('127.') ||      // Localhost
+           ip.startsWith('10.') ||        // Private Class A
+           ip.startsWith('192.168.') ||   // Private Class C
+           ip.startsWith('172.16.') ||    // Private Class B (172.16-31)
+           ip.startsWith('172.17.') ||
+           ip.startsWith('172.18.') ||
+           ip.startsWith('172.19.') ||
+           ip.startsWith('172.20.') ||
+           ip.startsWith('172.21.') ||
+           ip.startsWith('172.22.') ||
+           ip.startsWith('172.23.') ||
+           ip.startsWith('172.24.') ||
+           ip.startsWith('172.25.') ||
+           ip.startsWith('172.26.') ||
+           ip.startsWith('172.27.') ||
+           ip.startsWith('172.28.') ||
+           ip.startsWith('172.29.') ||
+           ip.startsWith('172.30.') ||
+           ip.startsWith('172.31.') ||
+           ip === '::1' ||                // IPv6 localhost
+           ip === 'localhost';
 }
 
 /**
@@ -47,30 +99,67 @@ function getDeviceInfo(req) {
     return `${os} / ${browser}`;
 }
 
+// In-memory cache for geo-location (24 hours TTL)
+const geoCache = new Map();
+const GEO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 /**
- * Get approximate location from IP (basic implementation)
- * For production, use ip-api.com or ipinfo.io API
+ * Get approximate location from IP
+ * Uses cache to reduce API calls
  */
 async function getLocationFromIP(ip) {
     // Skip for localhost/private IPs
-    if (ip === 'Unknown' || ip.startsWith('127.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    if (isPrivateIP(ip)) {
         return 'Local Network';
     }
     
+    // Check cache first
+    const cached = geoCache.get(ip);
+    if (cached && Date.now() - cached.timestamp < GEO_CACHE_TTL) {
+        return cached.location;
+    }
+    
     try {
-        // Free IP geolocation API (100 requests/day limit)
-        const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
+        // Try Cloudflare headers first (fastest, no API call needed)
+        // Note: This requires Cloudflare to be enabled on your domain
+        
+        // Fallback to IP geolocation API
+        // Using ip-api.com (free, 45 req/min limit)
+        const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`, {
+            timeout: 3000 // 3 second timeout
+        });
+        
         const data = await response.json();
         
         if (data.status === 'success') {
-            return `${data.city || ''}, ${data.regionName || ''}, ${data.country || ''}`.replace(/^, |, $/g, '');
+            const location = `${data.city || ''}, ${data.regionName || ''}, ${data.country || ''}`.replace(/^, |, $/g, '');
+            
+            // Cache the result
+            geoCache.set(ip, {
+                location,
+                timestamp: Date.now()
+            });
+            
+            return location;
         }
     } catch (error) {
-        console.error('❌ IP geolocation error:', error);
+        console.error('❌ IP geolocation error:', error.message);
     }
     
     return 'Unknown Location';
 }
+
+/**
+ * Clear expired cache entries periodically
+ */
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of geoCache.entries()) {
+        if (now - data.timestamp > GEO_CACHE_TTL) {
+            geoCache.delete(ip);
+        }
+    }
+}, 60 * 60 * 1000); // Clean every hour
 
 /**
  * Get all request info at once
@@ -87,6 +176,7 @@ module.exports = {
     getClientIP,
     getDeviceInfo,
     getLocationFromIP,
-    getRequestInfo
+    getRequestInfo,
+    isPrivateIP
 };
 

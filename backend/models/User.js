@@ -61,6 +61,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    registrationIP: {
+        type: String,
+        default: null
+    },
+    registrationDevice: {
+        type: String,
+        default: null
+    },
+    registrationLocation: {
+        type: String,
+        default: null
+    },
     isLocked: {
         type: Boolean,
         default: false

@@ -32,13 +32,45 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
         
+        // ====================================
+        // Get registration info (IP, Device, Location)
+        // ====================================
+        const { ip, device, location } = await getRequestInfo(req);
+        
+        console.log(`📝 New registration attempt from IP: ${ip}, Device: ${device}, Location: ${location}`);
+        
+        // ====================================
+        // Anti-spam: Check registrations from same IP in last 24h
+        // ====================================
+        const MAX_REGISTRATIONS_PER_IP = 3; // Allow max 3 accounts per IP per day
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        
+        const recentRegistrations = await User.countDocuments({
+            registrationIP: ip,
+            createdAt: { $gte: oneDayAgo }
+        });
+        
+        if (recentRegistrations >= MAX_REGISTRATIONS_PER_IP && ip !== 'Unknown' && !ip.includes('Local')) {
+            console.log(`⚠️ Registration blocked: IP ${ip} exceeded limit (${recentRegistrations}/${MAX_REGISTRATIONS_PER_IP})`);
+            return res.status(429).json({ 
+                error: `Bạn đã tạo quá nhiều tài khoản từ máy này (${recentRegistrations}/${MAX_REGISTRATIONS_PER_IP}). Vui lòng thử lại sau 24 giờ.`,
+                retryAfter: '24 hours'
+            });
+        }
+        
         // Create user
         const user = new User({
             name,
             email,
             password,
-            provider: provider || 'local'
+            provider: provider || 'local',
+            registrationIP: ip,
+            registrationDevice: device,
+            registrationLocation: location
         });
+        
+        // Add to login history
+        user.loginHistory.unshift({ ip, device, location });
         
         await user.save();
         
