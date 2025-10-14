@@ -125,6 +125,23 @@ function logout() {
 }
 
 // ========================================
+// FORGOT PASSWORD HANDLER
+// ========================================
+
+function handleForgotPassword() {
+    const confirmed = confirm(
+        '📧 RESET MẬT KHẨU\n\n' +
+        'Do chi phí duy trì hiện còn hạn chế, nếu bạn muốn reset mật khẩu, ' +
+        'hãy chọn "Đồng ý" để được chuyển link tới nhóm Support.\n\n' +
+        'Bạn có muốn tiếp tục?'
+    );
+    
+    if (confirmed) {
+        window.open('https://www.facebook.com/dvqb99/', '_blank');
+    }
+}
+
+// ========================================
 // LOGIN HANDLER
 // ========================================
 
@@ -294,17 +311,11 @@ Thiết bị này đã được đăng ký trước đó vào ngày:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 👤 Họ tên: ${account.name}
 📧 Email: ${account.email}
-🌐 IP: ${account.registrationIP || 'N/A'}
-💻 Thiết bị: ${account.registrationDevice || 'N/A'}
-📍 Vị trí: ${account.registrationLocation || 'N/A'}
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ VUI LÒNG:
 • Dùng tài khoản này để đăng nhập
-• Nếu quên mật khẩu, liên hệ hỗ trợ để reset
-
-📞 HỖ TRỢ: Liên hệ admin để được hỗ trợ
+• Nếu quên mật khẩu, click "Quên mật khẩu?" để được hỗ trợ
                 `.trim();
                 
                 alert(message);
