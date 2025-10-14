@@ -84,7 +84,7 @@ const userSchema = new mongoose.Schema({
     },
     monthlyReportLimit: {
         type: Number,
-        default: 5
+        default: 3
     },
     lastReportReset: {
         type: Date,

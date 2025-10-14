@@ -467,10 +467,10 @@ router.post('/report-issue', authenticateToken, async (req, res) => {
         
         // Reset counter if more than 30 days
         if (daysSinceReset >= 30) {
-            user.monthlyReportLimit = 5;
+            user.monthlyReportLimit = 3;
             user.lastReportReset = now;
             await user.save();
-            console.log('🔄 Reset monthly report limit to 5');
+            console.log('🔄 Reset monthly report limit to 3');
         }
         
         // Check limit

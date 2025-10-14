@@ -469,6 +469,144 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+
+        /* Custom Modal Dialog System */
+        .custom-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 10001;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .custom-modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-modal-dialog {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 16px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        .custom-modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .custom-modal-icon {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .custom-modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            flex: 1;
+        }
+
+        .custom-modal-body {
+            padding: 28px;
+            color: #ddd;
+            line-height: 1.6;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .custom-modal-body pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 3px solid #60a5fa;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .custom-modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .custom-modal-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .custom-modal-btn-primary {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+        }
+
+        .custom-modal-btn-primary:hover {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .custom-modal-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .custom-modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .custom-modal-btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .custom-modal-btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -655,7 +793,7 @@
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="color: #ddd; font-size: 0.9rem;">🔄 Lần đổi còn lại:</span>
-                                    <span id="reportLimit" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">5/5</span>
+                                    <span id="reportLimit" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">3/3</span>
                                 </div>
                             </div>
                         </div>
@@ -881,8 +1019,8 @@
                 <p style="margin: 0; font-size: 0.9rem; line-height: 1.6;">
                     <strong>⚠️ Lưu ý quan trọng:</strong><br>
                     • Nếu kiểm tra thấy cookie vẫn dùng được, bạn có thể bị hạn chế vì lạm dụng.<br>
-                    • Mỗi tháng bạn chỉ có <strong>5 lần</strong> đổi tài khoản.<br>
-                    • Số lần còn lại: <strong id="reportLimitModal">5/5</strong>
+                    • Mỗi tháng bạn chỉ có <strong>3 lần</strong> đổi tài khoản.<br>
+                    • Số lần còn lại: <strong id="reportLimitModal">3/3</strong>
                 </p>
             </div>
             
@@ -952,6 +1090,97 @@
 
     <script>
         // ========================================
+        // CUSTOM MODAL DIALOG SYSTEM
+        // ========================================
+
+        function showCustomModal(options) {
+            const {
+                icon = 'ℹ️',
+                title = 'Thông báo',
+                message = '',
+                buttons = [{ text: 'OK', type: 'primary', onClick: null }]
+            } = options;
+
+            const modalOverlay = document.getElementById('customModalOverlay');
+            const modalIcon = document.getElementById('customModalIcon');
+            const modalTitle = document.getElementById('customModalTitle');
+            const modalBody = document.getElementById('customModalBody');
+            const modalFooter = document.getElementById('customModalFooter');
+
+            modalIcon.textContent = icon;
+            modalTitle.textContent = title;
+
+            if (message.includes('\n') || message.includes('•')) {
+                modalBody.innerHTML = `<pre>${message}</pre>`;
+            } else {
+                modalBody.innerHTML = message;
+            }
+
+            modalFooter.innerHTML = '';
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = `custom-modal-btn custom-modal-btn-${btn.type || 'primary'}`;
+                button.textContent = btn.text;
+                button.onclick = () => {
+                    closeCustomModal();
+                    if (btn.onClick) btn.onClick();
+                };
+                modalFooter.appendChild(button);
+            });
+
+            modalOverlay.classList.add('active');
+
+            modalOverlay.onclick = (e) => {
+                if (e.target === modalOverlay) {
+                    closeCustomModal();
+                }
+            };
+
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeCustomModal();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        }
+
+        function closeCustomModal() {
+            const modalOverlay = document.getElementById('customModalOverlay');
+            modalOverlay.classList.remove('active');
+        }
+
+        function showConfirmCustomModal(options) {
+            return new Promise((resolve) => {
+                const {
+                    icon = '❓',
+                    title = 'Xác nhận',
+                    message = '',
+                    confirmText = 'Đồng ý',
+                    cancelText = 'Hủy'
+                } = options;
+
+                showCustomModal({
+                    icon,
+                    title,
+                    message,
+                    buttons: [
+                        {
+                            text: cancelText,
+                            type: 'secondary',
+                            onClick: () => resolve(false)
+                        },
+                        {
+                            text: confirmText,
+                            type: 'primary',
+                            onClick: () => resolve(true)
+                        }
+                    ]
+                });
+            });
+        }
+
+        // ========================================
         // LOAD COOKIE INFO
         // ========================================
         async function loadCookieInfo() {
@@ -983,9 +1212,9 @@
                     
                     // Update report limit display
                     if (data.user && reportLimitElement) {
-                        const limit = data.user.monthlyReportLimit || 0;
-                        reportLimitElement.textContent = `${limit}/5`;
-                        reportLimitElement.style.color = limit > 2 ? '#10b981' : limit > 0 ? '#fbbf24' : '#ef4444';
+                        const limit = data.user.monthlyReportLimit !== undefined ? data.user.monthlyReportLimit : 3;
+                        reportLimitElement.textContent = `${limit}/3`;
+                        reportLimitElement.style.color = limit > 1 ? '#10b981' : limit > 0 ? '#fbbf24' : '#ef4444';
                     }
                 }
             } catch (error) {
@@ -1003,7 +1232,7 @@
                 modal.classList.add('active');
                 
                 // Update limit in modal
-                const reportLimitText = document.getElementById('reportLimit')?.textContent || '5/5';
+                const reportLimitText = document.getElementById('reportLimit')?.textContent || '3/3';
                 const reportLimitModal = document.getElementById('reportLimitModal');
                 if (reportLimitModal) {
                     reportLimitModal.textContent = reportLimitText;
@@ -1060,17 +1289,40 @@
             const customReason = document.getElementById('customReason').value;
             
             if (!reason) {
-                alert('❌ Vui lòng chọn lý do!');
+                showCustomModal({
+                    icon: '❌',
+                    title: 'Thiếu thông tin',
+                    message: 'Vui lòng chọn lý do!',
+                    buttons: [{ text: 'OK', type: 'danger' }]
+                });
                 return;
             }
             
             if (reason === 'other' && !customReason.trim()) {
-                alert('❌ Vui lòng nhập lý do chi tiết!');
+                showCustomModal({
+                    icon: '❌',
+                    title: 'Thiếu thông tin',
+                    message: 'Vui lòng nhập lý do chi tiết!',
+                    buttons: [{ text: 'OK', type: 'danger' }]
+                });
                 return;
             }
             
-            // Confirm action
-            const confirmed = confirm('⚠️ Bạn chắc chắn muốn báo lỗi và đổi tài khoản?\n\nHành động này sẽ giảm số lần đổi tài khoản còn lại của bạn.\n\nVà bạn sẽ phải xem 1 quảng cáo để được tiếp tục.');
+            // Confirm action with new message
+            const confirmed = await showConfirmCustomModal({
+                icon: '⚠️',
+                title: 'XÁC NHẬN ĐỔI TÀI KHOẢN',
+                message: `Bạn chắc chắn muốn đổi tài khoản?
+
+Việc này sẽ trừ 1 trong 3 lần đổi tài khoản của tháng.
+
+Nếu kiểm tra lại thấy cookie cũ vẫn dùng được, tài khoản của bạn có thể bị hạn chế.
+
+Vui lòng xem quảng cáo để hoàn tất.`,
+                confirmText: 'Đồng ý',
+                cancelText: 'Hủy'
+            });
+            
             if (!confirmed) return;
             
             // Show ad before processing
@@ -1093,23 +1345,36 @@
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    alert('❌ ' + (data.error || 'Có lỗi xảy ra'));
+                    showCustomModal({
+                        icon: '❌',
+                        title: 'Lỗi',
+                        message: data.error || 'Có lỗi xảy ra',
+                        buttons: [{ text: 'OK', type: 'danger' }]
+                    });
                     return;
                 }
                 
                 // Success
-                alert(`✅ ${data.message}\n\nSố lần còn lại: ${data.remainingReports}/5`);
+                showCustomModal({
+                    icon: '✅',
+                    title: 'Thành công',
+                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/3\n\n🔄 Hệ thống sẽ tự động chuyển sang tài khoản khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản mới.`,
+                    buttons: [{ text: 'OK', type: 'primary' }]
+                });
+                
                 closeReportIssueModal();
                 
                 // Reload cookie info
                 await loadCookieInfo();
                 
-                // Trigger automatic cookie switch (giống như bấm "Watch as Guest")
-                alert('🔄 Hệ thống sẽ tự động chuyển sang tài khoản khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản mới.');
-                
             } catch (error) {
                 console.error('❌ Report issue error:', error);
-                alert('❌ Có lỗi xảy ra: ' + error.message);
+                showCustomModal({
+                    icon: '❌',
+                    title: 'Lỗi kết nối',
+                    message: 'Có lỗi xảy ra: ' + error.message,
+                    buttons: [{ text: 'OK', type: 'danger' }]
+                });
             }
         }
         
@@ -1333,6 +1598,22 @@
             </div>
             <div class="ad-timer" id="adTimer">2</div>
             <p style="font-size: 0.9rem; color: #888;">giây còn lại</p>
+        </div>
+    </div>
+
+    <!-- Custom Modal Dialog -->
+    <div class="custom-modal-overlay" id="customModalOverlay">
+        <div class="custom-modal-dialog">
+            <div class="custom-modal-header">
+                <span class="custom-modal-icon" id="customModalIcon">ℹ️</span>
+                <div class="custom-modal-title" id="customModalTitle">Thông báo</div>
+            </div>
+            <div class="custom-modal-body" id="customModalBody">
+                <!-- Content will be injected here -->
+            </div>
+            <div class="custom-modal-footer" id="customModalFooter">
+                <!-- Buttons will be injected here -->
+            </div>
         </div>
     </div>
 
