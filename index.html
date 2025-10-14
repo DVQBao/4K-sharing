@@ -625,7 +625,7 @@
                 <div class="options">
                     <!-- Option 1: Buy Official -->
                     <div class="option-card">
-                        <h2>🎫 Mua gói chính thức</h2>
+                        <h2>Mua gói chính thức</h2>
                         <p>Đăng ký tài khoản Netflix chính thống với đầy đủ tính năng và nhiều profile.</p>
                         <button class="btn" onclick="showOfficialPackageModal()">Chọn gói dịch vụ</button>
                     </div>
@@ -658,27 +658,20 @@
                                 </p>
 
                                 <div class="step-flow">
-                                    <!-- Step 1: Open Netflix -->
+                                    <!-- Combined Steps -->
                                     <div class="step">
-                                        <div class="step-header">
-                                            <span class="step-number">1</span>
-                                            <span class="step-title">Mở Netflix.com</span>
+                                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                                            <button class="btn" id="openNetflixBtn" style="font-size: 0.85rem; padding: 8px 16px;">
+                                                Bước 1: Mở Netflix.com
+                                            </button>
+                                            <button class="btn" id="watchAsGuestBtn" style="font-size: 0.85rem; padding: 8px 16px;">
+                                                Bước 2: Watch as Guest
+                                            </button>
+                                            <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="font-size: 0.85rem; padding: 8px 16px;">
+                                                Contact Support
+                                            </button>
                                         </div>
-                                        <button class="btn" id="openNetflixBtn">
-                                            Mở Netflix Tab
-                                        </button>
                                         <div class="step-status" id="step1Status"></div>
-                                    </div>
-
-                                    <!-- Step 2: Watch Ad & Inject -->
-                                    <div class="step">
-                                        <div class="step-header">
-                                            <span class="step-number">2</span>
-                                            <span class="step-title">Xem quảng cáo & bắt đầu</span>
-                                        </div>
-                                        <button class="btn" id="watchAsGuestBtn">
-                                            Watch as Guest
-                                        </button>
                                         <div class="step-status" id="step2Status"></div>
                                     </div>
                                 </div>
@@ -686,7 +679,7 @@
 
                             <!-- CỘT B: HƯỚNG DẪN KÍCH HOẠT TV -->
                             <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px;">
-                                <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: #a78bfa;">Hướng dẫn kích hoạt xem trên TV</h3>
+                                <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: #a78bfa;">Hướng dẫn xem trên TV</h3>
 
                                 <!-- Compact Steps -->
                                 <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
@@ -711,19 +704,19 @@
                                         </p>
                                     </div>
                                     
-                                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
                                         <span style="background: #4ade80; color: #000; min-width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; margin-top: 2px;">✓</span>
                                         <p style="margin: 0; font-size: 0.85rem; color: #4ade80; line-height: 1.5;">
                                             URL → <code style="background: rgba(74,222,128,0.15); color: #4ade80; padding: 1px 4px; border-radius: 3px; font-size: 0.8rem;">/tv/out/success</code> → TV đã kích hoạt!
                                         </p>
                                     </div>
-                                </div>
-
-                                <!-- Quick Tip -->
-                                <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); padding: 10px; border-radius: 6px;">
-                                    <button onclick="window.open('https://www.youtube.com/watch?v=RORK-joDInU', '_blank')" style="background: linear-gradient(135deg, #ff0000, #cc0000); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; width: 100%;">
-                                        <span>Xem video hướng dẫn kích hoạt TV</span>
-                                    </button>
+                                    
+                                    <!-- Video Tutorial Button -->
+                                    <div style="margin-top: 15px;">
+                                        <button onclick="window.open('https://www.youtube.com/watch?v=RORK-joDInU', '_blank')" style="background: linear-gradient(135deg, #ff0000, #cc0000); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; width: 100%;">
+                                            <span>Xem video hướng dẫn</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
