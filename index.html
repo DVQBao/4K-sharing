@@ -420,6 +420,55 @@
             width: 0%;
             transition: width 0.1s linear;
         }
+
+        /* Ad Modal Styles */
+        .ad-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ad-modal-overlay.active {
+            display: flex;
+        }
+
+        .ad-modal-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ad-timer {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #60a5fa;
+            margin: 20px 0;
+            animation: pulse 1s infinite;
+        }
+
+        .ad-video-placeholder {
+            background: #000;
+            border-radius: 8px;
+            padding: 60px 20px;
+            margin: 20px 0;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
     </style>
 </head>
 <body>
@@ -984,6 +1033,28 @@
             }
         }
         
+        function showAdBeforeReport() {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('adModalOverlay');
+                const timerEl = document.getElementById('adTimer');
+                let countdown = 2;
+
+                overlay.classList.add('active');
+                timerEl.textContent = countdown;
+
+                const timer = setInterval(() => {
+                    countdown--;
+                    timerEl.textContent = countdown;
+
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        overlay.classList.remove('active');
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
         async function confirmReportIssue() {
             const reason = document.getElementById('reportReason').value;
             const customReason = document.getElementById('customReason').value;
@@ -999,8 +1070,11 @@
             }
             
             // Confirm action
-            const confirmed = confirm('⚠️ Bạn chắc chắn muốn báo lỗi và đổi tài khoản?\n\nHành động này sẽ giảm số lần đổi tài khoản còn lại của bạn.');
+            const confirmed = confirm('⚠️ Bạn chắc chắn muốn báo lỗi và đổi tài khoản?\n\nHành động này sẽ giảm số lần đổi tài khoản còn lại của bạn.\n\nVà bạn sẽ phải xem 1 quảng cáo để được tiếp tục.');
             if (!confirmed) return;
+            
+            // Show ad before processing
+            await showAdBeforeReport();
             
             try {
                 // Call API to report issue
@@ -1248,6 +1322,20 @@
             closeOfficialPackageModal();
         }
     </script>
+
+    <!-- Ad Modal -->
+    <div class="ad-modal-overlay" id="adModalOverlay">
+        <div class="ad-modal-content">
+            <h2 style="margin-bottom: 15px;">📺 VUI LÒNG XEM QUẢNG CÁO</h2>
+            <p style="color: #ddd; margin-bottom: 15px;">Vui lòng xem quảng cáo để tiếp tục</p>
+            <div class="ad-video-placeholder">
+                <p style="font-size: 1.2rem; color: #888;">🎬 Quảng cáo đang phát...</p>
+            </div>
+            <div class="ad-timer" id="adTimer">2</div>
+            <p style="font-size: 0.9rem; color: #888;">giây còn lại</p>
+        </div>
+    </div>
+
     <script src="cookie-retry-handler.js"></script>
     <script src="app.js"></script>
 </body>
