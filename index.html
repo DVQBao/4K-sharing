@@ -294,13 +294,28 @@
         }
 
         /* Custom Action Buttons */
-        .btn[onclick*="openUpgradeToProModal"]:hover,
-        .btn[onclick*="showReportIssueModal"]:hover,
-        .btn[onclick*="handleLogout"]:hover,
+        .btn[onclick*="openUpgradeToProModal"]:hover {
+            background: rgba(59, 130, 246, 0.2) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn[onclick*="showReportIssueModal"]:hover {
+            background: rgba(245, 158, 11, 0.2) !important;
+            border-color: rgba(245, 158, 11, 0.5) !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn[onclick*="handleLogout"]:hover {
+            background: rgba(107, 114, 128, 0.2) !important;
+            border-color: rgba(107, 114, 128, 0.5) !important;
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        }
+
         .btn[onclick*="facebook.com"]:hover {
-            background: rgba(255, 255, 255, 0.2) !important;
-            border-color: rgba(255, 255, 255, 0.5) !important;
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+            background: rgba(16, 185, 129, 0.2) !important;
+            border-color: rgba(16, 185, 129, 0.5) !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         /* Ad Modal */
@@ -801,19 +816,19 @@
                             </div>
                         </div>
 
-                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Nâng cấp lên Pro Plan
                         </button>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(245, 158, 11, 0.1); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
-                        <button onclick="handleLogout()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="handleLogout()" class="btn" style="background: rgba(107, 114, 128, 0.1); color: #9ca3af; margin-bottom: 10px; border: 1px solid rgba(107, 114, 128, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Đăng xuất
                         </button>
 
-                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Contact Support
                         </button>
                     </div>
@@ -1534,8 +1549,8 @@ Vui lòng xem quảng cáo để hoàn tất.`,
         function openUpgradeToProFromPlanModal() {
             // Close plan modal first
             closePlanModal();
-            // Open payment modal for Pro upgrade
-            openPaymentModal('pro', '20.000đ/tháng', 'pro');
+            // Open payment modal for Pro upgrade from plan modal
+            openPaymentModal('pro', '20.000đ/tháng', 'pro-from-plan');
         }
 
         // Official Package Modal Functions
@@ -1579,7 +1594,7 @@ Vui lòng xem quảng cáo để hoàn tất.`,
             
             // Set content based on source
             let contentText = '';
-            if (source === 'pro' && userEmail) {
+            if ((source === 'pro' || source === 'pro-from-plan') && userEmail) {
                 // For Pro upgrade: show actual email
                 contentText = userEmail;
             } else {
@@ -1613,8 +1628,11 @@ Vui lòng xem quảng cáo để hoàn tất.`,
             closePaymentModal();
             
             // Check payment source to decide where to go back
-            if (paymentSource === 'pro') {
-                // For Pro upgrade: just close, stay on main page
+            if (paymentSource === 'pro-from-plan') {
+                // For Pro upgrade from plan modal: go back to plan modal
+                showPlanModal();
+            } else if (paymentSource === 'pro') {
+                // For Pro upgrade from dashboard: stay on main page
                 // Do nothing - already closed modal
             } else {
                 // For package purchase: reopen official package modal
