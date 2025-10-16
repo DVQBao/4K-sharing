@@ -293,6 +293,27 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        /* Custom Action Buttons */
+        .btn[onclick*="openUpgradeToProModal"]:hover {
+            background: #1e47cc !important;
+            box-shadow: 0 4px 12px rgba(40, 88, 255, 0.4);
+        }
+
+        .btn[onclick*="showReportIssueModal"]:hover {
+            background: #a32727 !important;
+            box-shadow: 0 4px 12px rgba(196, 49, 49, 0.4);
+        }
+
+        .btn[onclick*="handleLogout"]:hover {
+            background: #3a3a3a !important;
+            box-shadow: 0 4px 12px rgba(74, 74, 74, 0.4);
+        }
+
+        .btn[onclick*="facebook.com"]:hover {
+            background: #127e7e !important;
+            box-shadow: 0 4px 12px rgba(21, 158, 158, 0.4);
+        }
+
         /* Ad Modal */
         .modal {
             display: none;
@@ -791,19 +812,19 @@
                             </div>
                         </div>
 
-                        <button onclick="openUpgradeToProModal()" class="btn" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; margin-bottom: 10px; border: none;">
-                            🚀 Nâng cấp lên Pro
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: #2858FF; color: #fff; margin-bottom: 10px; border: 1px solid #fff; border-radius: 8px; transition: all 0.3s;">
+                            Nâng cấp lên Pro Plan
                         </button>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; margin-bottom: 10px; border: none;">
+                        <button onclick="showReportIssueModal()" class="btn" style="background: #C43131; color: #fff; margin-bottom: 10px; border: 1px solid #fff; border-radius: 8px; transition: all 0.3s;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
-                        <button onclick="handleLogout()" class="btn" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: #fff; margin-bottom: 10px; border: none;">
+                        <button onclick="handleLogout()" class="btn" style="background: #4A4A4A; color: #fff; margin-bottom: 10px; border: 1px solid #fff; border-radius: 8px; transition: all 0.3s;">
                             Đăng xuất
                         </button>
 
-                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none;">
+                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: #159E9E; color: #fff; border: 1px solid #fff; border-radius: 8px; transition: all 0.3s;">
                             Contact Support
                         </button>
                     </div>
@@ -1559,7 +1580,9 @@ Vui lòng xem quảng cáo để hoàn tất.`,
         }
 
         // Payment Modal Functions
-        function openPaymentModal(plan, amount) {
+        let paymentSource = 'package'; // 'package' or 'pro'
+
+        function openPaymentModal(plan, amount, source = 'package') {
             const planNames = {
                 'basic': 'Cơ Bản',
                 'family': 'Gia Đình',
@@ -1567,14 +1590,27 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                 'pro': 'Pro'
             };
             
+            // Store payment source
+            paymentSource = source;
+            
             // Get user email from localStorage
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const userEmail = currentUser.email || 'Email đăng ký tài khoản';
+            const userEmail = currentUser.email || '';
+            
+            // Set content based on source
+            let contentText = '';
+            if (source === 'pro' && userEmail) {
+                // For Pro upgrade: show actual email
+                contentText = userEmail;
+            } else {
+                // For package purchase: show instruction
+                contentText = 'Email đăng ký tài khoản';
+            }
             
             // Set plan name, amount and content
             document.getElementById('paymentPlanName').textContent = planNames[plan] || plan;
             document.getElementById('paymentAmount').textContent = amount;
-            document.getElementById('paymentContent').textContent = userEmail;
+            document.getElementById('paymentContent').textContent = contentText;
             
             // Show payment modal
             document.getElementById('paymentModal').style.display = 'flex';
@@ -1585,7 +1621,7 @@ Vui lòng xem quảng cáo để hoàn tất.`,
 
         function openUpgradeToProModal() {
             // Open payment modal for Pro upgrade
-            openPaymentModal('pro', '20.000đ/tháng');
+            openPaymentModal('pro', '20.000đ/tháng', 'pro');
         }
 
         function closePaymentModal() {
@@ -1593,9 +1629,17 @@ Vui lòng xem quảng cáo để hoàn tất.`,
         }
 
         function backToPackageSelection() {
-            // Close payment modal and reopen official package modal
+            // Close payment modal
             closePaymentModal();
-            showOfficialPackageModal();
+            
+            // Check payment source to decide where to go back
+            if (paymentSource === 'pro') {
+                // For Pro upgrade: just close, stay on main page
+                // Do nothing - already closed modal
+            } else {
+                // For package purchase: reopen official package modal
+                showOfficialPackageModal();
+            }
         }
 
         function sendVerification() {
