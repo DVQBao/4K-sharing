@@ -294,28 +294,13 @@
         }
 
         /* Custom Action Buttons */
-        .btn[onclick*="openUpgradeToProModal"]:hover {
-            background: rgba(251, 191, 36, 0.25) !important;
-            border-color: rgba(251, 191, 36, 0.6) !important;
-            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
-        }
-
-        .btn[onclick*="showReportIssueModal"]:hover {
-            background: rgba(196, 49, 49, 0.25) !important;
-            border-color: rgba(196, 49, 49, 0.6) !important;
-            box-shadow: 0 4px 12px rgba(196, 49, 49, 0.3);
-        }
-
-        .btn[onclick*="handleLogout"]:hover {
-            background: rgba(74, 74, 74, 0.25) !important;
-            border-color: rgba(74, 74, 74, 0.6) !important;
-            box-shadow: 0 4px 12px rgba(74, 74, 74, 0.3);
-        }
-
+        .btn[onclick*="openUpgradeToProModal"]:hover,
+        .btn[onclick*="showReportIssueModal"]:hover,
+        .btn[onclick*="handleLogout"]:hover,
         .btn[onclick*="facebook.com"]:hover {
-            background: rgba(21, 158, 158, 0.25) !important;
-            border-color: rgba(21, 158, 158, 0.6) !important;
-            box-shadow: 0 4px 12px rgba(21, 158, 158, 0.3);
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
         }
 
         /* Ad Modal */
@@ -816,19 +801,19 @@
                             </div>
                         </div>
 
-                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Nâng cấp lên Pro Plan
                         </button>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(196, 49, 49, 0.15); color: #ef4444; margin-bottom: 10px; border: 1px solid rgba(196, 49, 49, 0.4); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
-                        <button onclick="handleLogout()" class="btn" style="background: rgba(74, 74, 74, 0.15); color: #9ca3af; margin-bottom: 10px; border: 1px solid rgba(74, 74, 74, 0.4); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="handleLogout()" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Đăng xuất
                         </button>
 
-                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: rgba(21, 158, 158, 0.15); color: #2dd4d4; border: 1px solid rgba(21, 158, 158, 0.4); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Contact Support
                         </button>
                     </div>
@@ -870,7 +855,7 @@
             </div>
 
             <!-- Option 2: Pro Plan -->
-            <div style="background: linear-gradient(135deg, rgba(229, 9, 20, 0.2), rgba(255, 107, 107, 0.2)); border: 2px solid #e50914; border-radius: 12px; padding: 25px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="selectProPlan()">
+            <div style="background: linear-gradient(135deg, rgba(229, 9, 20, 0.2), rgba(255, 107, 107, 0.2)); border: 2px solid #e50914; border-radius: 12px; padding: 25px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                     <h3 style="font-size: 1.4rem; margin: 0;">Pro Plan - Không quảng cáo</h3>
                     <span style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">HOT</span>
@@ -888,25 +873,14 @@
 
                 <ul style="color: #ddd; line-height: 2; margin-bottom: 20px; margin-left: 20px;">
                     <li>Xem phim <strong>không quảng cáo</strong></li>
-                    <li>Truy cập nhanh, không chờ đợi</li>
+                    <li>Tăng số lượt đổi tài khoản Netflix trong tháng lên đến 5 lượt</li>
                     <li>Ưu tiên hỗ trợ khi có sự cố</li>
                     <li>Trải nghiệm mượt mà – giải trí không gián đoạn!</li>
                 </ul>
 
-                <button class="btn" style="width: 100%; background: #ffc107; color: #000; font-weight: 700;">
-                    Nâng cấp Pro - 20k/tháng
+                <button onclick="openUpgradeToProFromPlanModal()" class="btn" style="width: 100%; background: #ffc107; color: #000; font-weight: 700;">
+                    Nâng cấp Pro Plan - 20.000đ/tháng
                 </button>
-
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                    <p style="font-size: 0.9rem; color: #ddd; margin-bottom: 10px; text-align: center;">
-                        Liên hệ Support để nâng cấp:
-                    </p>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <a href="https://zalo.me/0393434851" target="_blank" class="btn btn-secondary" style="width: auto; padding: 10px 20px; font-size: 0.9rem;">
-                            Zalo: 039 3434 851
-                        </a>
-                    </div>
-                </div>
             </div>
 
             <div style="text-align: center; margin-top: 20px;">
@@ -1554,12 +1528,14 @@ Vui lòng xem quảng cáo để hoàn tất.`,
         }
 
         function selectProPlan() {
-            const confirmed = confirm('🚀 Nâng cấp lên Pro Plan?\n\n💰 Giá: 20.000 VNĐ/tháng\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
-            if (confirmed) {
-                // Open Zalo link
-                window.open('https://zalo.me/0393434851', '_blank');
-            }
+            // Deprecated - using openUpgradeToProFromPlanModal instead
+        }
+
+        function openUpgradeToProFromPlanModal() {
+            // Close plan modal first
             closePlanModal();
+            // Open payment modal for Pro upgrade
+            openPaymentModal('pro', '20.000đ/tháng', 'pro');
         }
 
         // Official Package Modal Functions
