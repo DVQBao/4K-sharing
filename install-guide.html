@@ -21,24 +21,23 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 8px;
             background: linear-gradient(90deg, #e50914, #ff6b6b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -47,63 +46,63 @@
 
         .subtitle {
             color: #aaa;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .step-section {
             background: rgba(255, 255, 255, 0.05);
             border-left: 4px solid #e50914;
-            padding: 25px;
+            padding: 20px;
             border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .step-number {
             display: inline-block;
             background: #e50914;
             color: #fff;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             text-align: center;
-            line-height: 40px;
+            line-height: 32px;
             font-weight: bold;
-            font-size: 1.3rem;
-            margin-right: 15px;
+            font-size: 1.1rem;
+            margin-right: 12px;
         }
 
         .step-title {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
+            font-size: 1.3rem;
+            margin-bottom: 12px;
             color: #fff;
             display: flex;
             align-items: center;
         }
 
         .step-content {
-            margin-left: 55px;
+            margin-left: 44px;
         }
 
         .step-content p {
             color: #ddd;
-            line-height: 1.8;
-            margin-bottom: 15px;
+            line-height: 1.6;
+            margin-bottom: 12px;
         }
 
         .btn {
             display: inline-block;
-            padding: 14px 28px;
+            padding: 10px 20px;
             background: #e50914;
             color: #fff;
             text-decoration: none;
             text-align: center;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: 600;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1rem;
-            margin-top: 10px;
+            font-size: 0.9rem;
+            margin-top: 8px;
         }
 
         .btn:hover {
@@ -121,56 +120,42 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 */
-            height: 0;
-            margin: 20px 0;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
 
         .code-block {
             background: #1a1a1a;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            padding: 15px;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 12px 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: #4ade80;
             overflow-x: auto;
+            font-size: 1rem;
         }
 
         .warning {
             background: rgba(255, 193, 7, 0.15);
             border: 2px solid #ffc107;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
             color: #fbbf24;
+            font-size: 0.9rem;
         }
 
         .success {
             background: rgba(40, 167, 69, 0.15);
             border: 2px solid #28a745;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
             color: #4ade80;
+            font-size: 0.9rem;
         }
 
         .back-link {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
         .back-link a {
@@ -188,8 +173,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Hướng dẫn cài đặt Extension</h1>
-            <p class="subtitle">Netflix Guest Helper - Chrome Extension</p>
+            <h1>Hướng dẫn cài đặt<br>Extension Tiệm Bánh Netflix</h1>
         </div>
 
         <!-- Step 1: Watch Video -->
@@ -199,16 +183,6 @@
                 <span>Xem video hướng dẫn</span>
             </div>
             <div class="step-content">
-                <p>Xem video chi tiết về cách cài đặt Chrome Extension:</p>
-                
-                <div class="video-container">
-                    <iframe 
-                        src="https://www.youtube.com/embed/oxbkGlpbVb4" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                </div>
-
                 <button class="btn" onclick="window.open('https://www.youtube.com/watch?v=oxbkGlpbVb4&list=RDZJxpF-hea1g&index=2', '_blank')">
                     Xem trên YouTube
                 </button>
@@ -225,7 +199,7 @@
                 <p>Click nút bên dưới để tải folder extension:</p>
                 
                 <button class="btn" onclick="downloadExtension()">
-                    Tải Extension (ZIP)
+                    Tải Extension
                 </button>
             </div>
         </div>
@@ -238,25 +212,21 @@
             </div>
             <div class="step-content">
                 <p><strong>A. Mở Chrome Extensions:</strong></p>
-                <div class="code-block" id="chromeExtUrl" style="cursor: pointer;" onclick="copyToClipboard('chrome://extensions/')" title="Click để copy">
+                <div class="code-block">
                     chrome://extensions/
                 </div>
-                
-                <button class="btn btn-secondary" onclick="copyToClipboard('chrome://extensions/')">
-                    Copy link (paste vào address bar)
-                </button>
 
-                <p style="margin-top: 20px;"><strong>B. Bật Developer Mode:</strong></p>
+                <p style="margin-top: 15px;"><strong>B. Bật Developer Mode:</strong></p>
                 <p>Bật "Chế độ dành cho nhà phát triển" ở góc trên bên phải</p>
 
-                <p style="margin-top: 20px;"><strong>C. Load Extension:</strong></p>
-                <ol style="margin-left: 20px; color: #ddd; line-height: 2;">
+                <p style="margin-top: 15px;"><strong>C. Load Extension:</strong></p>
+                <ol style="margin-left: 20px; color: #ddd; line-height: 1.8;">
                     <li>Click nút <strong>"Tải tiện ích đã giải nén" ở góc bên trái</strong></li>
                     <li>Chọn folder extension đã tải ở bước 2</li>
                     <li>Extension sẽ xuất hiện</li>
                 </ol>
 
-                <div class="success" style="margin-top: 20px;">
+                <div class="success" style="margin-top: 15px;">
                     <strong>Kiểm tra:</strong> Sau khi cài xong, reload trang chủ. Banner sẽ hiện "Extension đã cài đặt" màu xanh!
                 </div>
             </div>
@@ -270,15 +240,11 @@
             </div>
             <div class="step-content">
                 <p>Nếu bạn dùng Edge, mở:</p>
-                <div class="code-block" style="cursor: pointer;" onclick="copyToClipboard('edge://extensions/')" title="Click để copy">
+                <div class="code-block">
                     edge://extensions/
                 </div>
-                
-                <button class="btn btn-secondary" onclick="copyToClipboard('edge://extensions/')">
-                    Copy link (paste vào address bar)
-                </button>
 
-                <p style="margin-top: 15px;">Các bước tương tự như Chrome!</p>
+                <p style="margin-top: 12px;">Các bước tương tự như Chrome!</p>
             </div>
         </div>
 
@@ -289,23 +255,13 @@
     </div>
 
     <script>
-        /**
-         * Copy text to clipboard
-         */
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('✅ Đã copy: ' + text + '\n\nPaste vào address bar của Chrome rồi Enter!');
-            }).catch(err => {
-                alert('❌ Không thể copy. Vui lòng copy thủ công:\n' + text);
-            });
-        }
 
         /**
          * Download extension
          * Opens Google Drive link to download extension ZIP
          */
         function downloadExtension() {
-            const driveUrl = 'https://drive.google.com/file/d/1QaE_OjRy55t2N-dNqJ4RQAz6NLBFTrhD/view?usp=sharing';
+            const driveUrl = 'https://drive.google.com/drive/folders/1eozcbA4q54f8Ox46d2HlptSD92tDFHCl?usp=sharing';
             
             // Open Google Drive in new tab
             window.open(driveUrl, '_blank');

@@ -129,16 +129,25 @@ function logout() {
 // ========================================
 
 function handleForgotPassword() {
-    const confirmed = confirm(
-        '📧 RESET MẬT KHẨU\n\n' +
-        'Do chi phí duy trì hiện còn hạn chế, nếu bạn muốn reset mật khẩu, ' +
-        'hãy chọn "Đồng ý" để được chuyển link tới nhóm Support.\n\n' +
-        'Bạn có muốn tiếp tục?'
-    );
-    
-    if (confirmed) {
-        window.open('https://www.facebook.com/dvqb99/', '_blank');
-    }
+    showModal({
+        icon: '📧',
+        title: 'RESET MẬT KHẨU',
+        message: 'Do chi phí duy trì hiện còn hạn chế, nếu bạn muốn reset mật khẩu, hãy chọn "Đồng ý" để được chuyển link tới nhóm Support.\n\nBạn có muốn tiếp tục?',
+        buttons: [
+            {
+                text: 'Hủy',
+                type: 'secondary',
+                onClick: () => {}
+            },
+            {
+                text: 'Đồng ý',
+                type: 'primary',
+                onClick: () => {
+                    window.open('https://www.facebook.com/dvqb99/', '_blank');
+                }
+            }
+        ]
+    });
 }
 
 // ========================================
@@ -507,4 +516,100 @@ document.addEventListener('DOMContentLoaded', () => {
 // Expose logout for global access
 window.netflixAuthLogout = logout;
 window.netflixAuthGetCurrentUser = getCurrentUser;
+
+// ========================================
+// CUSTOM MODAL DIALOG SYSTEM
+// ========================================
+
+/**
+ * Show custom modal dialog
+ * @param {Object} options - Modal configuration
+ * @param {string} options.icon - Icon emoji (default: 'ℹ️')
+ * @param {string} options.title - Modal title
+ * @param {string} options.message - Modal message/content
+ * @param {Array} options.buttons - Array of button objects
+ */
+function showModal({ icon = 'ℹ️', title = 'Thông báo', message = '', buttons = [] }) {
+    const overlay = document.getElementById('customModalOverlay');
+    const modalIcon = document.getElementById('customModalIcon');
+    const modalTitle = document.getElementById('customModalTitle');
+    const modalBody = document.getElementById('customModalBody');
+    const modalFooter = document.getElementById('customModalFooter');
+
+    // Set icon and title
+    modalIcon.textContent = icon;
+    modalTitle.textContent = title;
+
+    // Set body content
+    modalBody.innerHTML = `<pre>${message}</pre>`;
+
+    // Clear and add buttons
+    modalFooter.innerHTML = '';
+    
+    if (buttons.length === 0) {
+        // Default OK button
+        const okBtn = document.createElement('button');
+        okBtn.className = 'custom-modal-btn custom-modal-btn-primary';
+        okBtn.textContent = 'OK';
+        okBtn.onclick = () => closeModal();
+        modalFooter.appendChild(okBtn);
+    } else {
+        buttons.forEach(btnConfig => {
+            const btn = document.createElement('button');
+            btn.className = `custom-modal-btn custom-modal-btn-${btnConfig.type || 'secondary'}`;
+            btn.textContent = btnConfig.text;
+            btn.onclick = () => {
+                if (btnConfig.onClick) btnConfig.onClick();
+                closeModal();
+            };
+            modalFooter.appendChild(btn);
+        });
+    }
+
+    // Show modal
+    overlay.classList.add('active');
+}
+
+/**
+ * Show confirmation modal
+ * @param {Object} options - Confirmation config
+ * @returns {Promise<boolean>} - Resolves to true if confirmed
+ */
+function showConfirmModal({ icon = '❓', title = 'Xác nhận', message = '', confirmText = 'Đồng ý', cancelText = 'Hủy' }) {
+    return new Promise((resolve) => {
+        showModal({
+            icon,
+            title,
+            message,
+            buttons: [
+                {
+                    text: cancelText,
+                    type: 'secondary',
+                    onClick: () => resolve(false)
+                },
+                {
+                    text: confirmText,
+                    type: 'primary',
+                    onClick: () => resolve(true)
+                }
+            ]
+        });
+    });
+}
+
+/**
+ * Close custom modal
+ */
+function closeModal() {
+    const overlay = document.getElementById('customModalOverlay');
+    overlay.classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const overlay = document.getElementById('customModalOverlay');
+    if (e.target === overlay) {
+        closeModal();
+    }
+});
 
