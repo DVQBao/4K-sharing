@@ -791,15 +791,19 @@
                             </div>
                         </div>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); margin-bottom: 10px;">
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; margin-bottom: 10px; border: none;">
+                            🚀 Nâng cấp lên Pro
+                        </button>
+
+                        <button onclick="showReportIssueModal()" class="btn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; margin-bottom: 10px; border: none;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
-                        <button onclick="handleLogout()" class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); margin-bottom: 10px;">
+                        <button onclick="handleLogout()" class="btn" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: #fff; margin-bottom: 10px; border: none;">
                             Đăng xuất
                         </button>
 
-                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4);">
+                        <button onclick="window.open('https://www.facebook.com/dvqb99/', '_blank')" class="btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none;">
                             Contact Support
                         </button>
                     </div>
@@ -1559,18 +1563,29 @@ Vui lòng xem quảng cáo để hoàn tất.`,
             const planNames = {
                 'basic': 'Cơ Bản',
                 'family': 'Gia Đình',
-                'premium': 'Premium Pro'
+                'premium': 'Premium Pro',
+                'pro': 'Pro'
             };
             
-            // Set plan name and amount
+            // Get user email from localStorage
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const userEmail = currentUser.email || 'Email đăng ký tài khoản';
+            
+            // Set plan name, amount and content
             document.getElementById('paymentPlanName').textContent = planNames[plan] || plan;
             document.getElementById('paymentAmount').textContent = amount;
+            document.getElementById('paymentContent').textContent = userEmail;
             
             // Show payment modal
             document.getElementById('paymentModal').style.display = 'flex';
             
             // Close official package modal if it's open
             closeOfficialPackageModal();
+        }
+
+        function openUpgradeToProModal() {
+            // Open payment modal for Pro upgrade
+            openPaymentModal('pro', '20.000đ/tháng');
         }
 
         function closePaymentModal() {
@@ -1635,7 +1650,7 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                                 <p style="margin: 5px 0;"><strong style="color: #60a5fa;">Số tài khoản:</strong> 1039015381</p>
                                 <p style="margin: 5px 0;"><strong style="color: #60a5fa;">Chủ tài khoản:</strong> Đặng Văn Quốc Bảo</p>
                                 <p style="margin: 5px 0;"><strong style="color: #60a5fa;">Số tiền:</strong> <span id="paymentAmount" style="color: #4ade80; font-weight: 700;"></span></p>
-                                <p style="margin: 5px 0;"><strong style="color: #60a5fa;">Nội dung:</strong> Email đăng ký tài khoản</p>
+                                <p style="margin: 5px 0;"><strong style="color: #60a5fa;">Nội dung:</strong> <span id="paymentContent" style="color: #4ade80; font-weight: 600;"></span></p>
                             </div>
                         </div>
                         
