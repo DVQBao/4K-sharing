@@ -625,8 +625,8 @@
                 <div class="options">
                     <!-- Option 1: Buy Official -->
                     <div class="option-card">
-                        <h2>Mua gói chính thức</h2>
-                        <p>Đăng ký tài khoản Netflix chính thống với đầy đủ tính năng và nhiều profile.</p>
+                        <h2>Mua gói chính chủ</h2>
+                        <p>Đăng ký tài khoản Netflix chính chủ với đầy đủ tính năng và nhiều profile.</p>
                         <button class="btn" onclick="showOfficialPackageModal()">Chọn gói dịch vụ</button>
                     </div>
 
@@ -634,7 +634,7 @@
                     <div class="option-card" id="guestSection">
                         <h2>Xem với tư cách khách</h2>
                         <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 20px;">
-                            <strong>Lưu ý:</strong> Chỉ hỗ trợ trên PC và TV, không khả dụng cho điện thoại. Để trải nghiệm đầy đủ tính năng, vui lòng chọn "Mua gói chính thức".
+                            <strong>Lưu ý:</strong> Chỉ hỗ trợ trên PC và TV, không khả dụng cho điện thoại. Để trải nghiệm đầy đủ tính năng, vui lòng chọn "Mua gói chính chủ".
                         </p>
                         
                         <!-- Login Required Notice -->
@@ -1543,27 +1543,15 @@ Vui lòng xem quảng cáo để hoàn tất.`,
         }
 
         function selectBasicPlan() {
-            const confirmed = confirm('📱 Chọn Gói Cơ Bản?\n\n💰 Giá: 25.000đ/tháng\n✅ Xem trên 1 thiết bị\n✅ Chất lượng SD\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
-            if (confirmed) {
-                window.open('https://zalo.me/0393434851', '_blank');
-            }
-            closeOfficialPackageModal();
+            // No longer needed - using openPaymentModal instead
         }
 
         function selectFamilyPlan() {
-            const confirmed = confirm('👨‍👩‍👧‍👦 Chọn Gói Gia Đình?\n\n💰 Giá: 70.000đ/tháng\n✅ Xem trên 4 thiết bị\n✅ Chất lượng Full HD / 4K\n✅ Đa người dùng, nhiều hồ sơ\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
-            if (confirmed) {
-                window.open('https://zalo.me/0393434851', '_blank');
-            }
-            closeOfficialPackageModal();
+            // No longer needed - using openPaymentModal instead
         }
 
         function selectPremiumPlan() {
-            const confirmed = confirm('💎 Chọn Gói Premium Pro?\n\n💰 Giá: 100.000đ/tháng\n✅ Full tính năng cao cấp\n✅ Luôn có slot, tốc độ nhanh\n\n📲 Liên hệ Zalo để thanh toán: 039 3434 851');
-            if (confirmed) {
-                window.open('https://zalo.me/0393434851', '_blank');
-            }
-            closeOfficialPackageModal();
+            // No longer needed - using openPaymentModal instead
         }
 
         // Payment Modal Functions
@@ -1574,14 +1562,9 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                 'premium': 'Premium Pro'
             };
             
-            // Get user email from localStorage
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const userEmail = currentUser.email || '';
-            
             // Set plan name and amount
             document.getElementById('paymentPlanName').textContent = planNames[plan] || plan;
             document.getElementById('paymentAmount').textContent = amount;
-            document.getElementById('paymentContent').textContent = userEmail;
             
             // Show payment modal
             document.getElementById('paymentModal').style.display = 'flex';
@@ -1592,6 +1575,12 @@ Vui lòng xem quảng cáo để hoàn tất.`,
 
         function closePaymentModal() {
             document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        function backToPackageSelection() {
+            // Close payment modal and reopen official package modal
+            closePaymentModal();
+            showOfficialPackageModal();
         }
 
         function sendVerification() {
@@ -1666,7 +1655,7 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-secondary" onclick="closePaymentModal()" style="flex: 1;">
+                        <button class="btn btn-secondary" onclick="backToPackageSelection()" style="flex: 1;">
                             Hủy
                         </button>
                         <button class="btn" onclick="sendVerification()" style="flex: 1; background: linear-gradient(135deg, #60a5fa, #3b82f6);">
