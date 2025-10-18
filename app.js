@@ -299,11 +299,11 @@ async function refreshUserFromDatabase() {
 // ========================================
 
 /**
- * Xử lý nút "Watch as Guest"
- * Hiển thị modal chọn gói: Free (ad) hoặc Pro (20k/tháng)
+ * Internal function - Xử lý Watch as Guest logic (dùng chung)
+ * @param {boolean} skipQuotaCheck - Bỏ qua kiểm tra quota (sau khi báo hỏng)
  */
-async function handleWatchAsGuest() {
-    console.log('📍 Step 2: Starting guest flow...');
+async function _watchAsGuestInternal(skipQuotaCheck = false) {
+    console.log('📍 Step 2: Starting guest flow...', skipQuotaCheck ? '(skip quota check)' : '');
     
     // Reset status
     hideStepStatus(2);
@@ -329,28 +329,38 @@ async function handleWatchAsGuest() {
         showToast('Cần cài extension để bắt đầu', 'warning');
     }
     
-    // KIỂM TRA QUOTA TỪ DATABASE TRƯỚC KHI CHO XEM
-    console.log('🔍 Checking quota from database...');
-    const freshUser = await refreshUserFromDatabase();
+    let freshUser = null;
     
-    if (freshUser) {
-        // Kiểm tra hết lượt đổi tài khoản (monthlyReportLimit <= 0)
-        if (freshUser.monthlyReportLimit !== undefined && freshUser.monthlyReportLimit <= 0) {
-            console.log('⛔ User has reached monthly report limit (checked from DB)');
-            
-            if (freshUser.plan === 'free') {
-                // Free user: Show upgrade modal
-                showLimitExceededFreeModal();
-            } else if (freshUser.plan === 'pro') {
-                // Pro user: Show support contact modal
-                showLimitExceededProModal();
+    // CHỈ KIỂM TRA QUOTA NẾU KHÔNG PHẢI SAU KHI BÁO HỎNG
+    if (!skipQuotaCheck) {
+        console.log('🔍 Checking quota from database...');
+        freshUser = await refreshUserFromDatabase();
+        
+        if (freshUser) {
+            // Kiểm tra hết lượt đổi tài khoản (monthlyReportLimit <= 0)
+            if (freshUser.monthlyReportLimit !== undefined && freshUser.monthlyReportLimit <= 0) {
+                console.log('⛔ User has reached monthly report limit (checked from DB)');
+                
+                if (freshUser.plan === 'free') {
+                    // Free user: Show upgrade modal
+                    showLimitExceededFreeModal();
+                } else if (freshUser.plan === 'pro') {
+                    // Pro user: Show support contact modal
+                    showLimitExceededProModal();
+                }
+                
+                return; // Stop execution
             }
             
-            return; // Stop execution
+            console.log(`✅ User has ${freshUser.monthlyReportLimit} quota remaining`);
         }
-        
-        console.log(`✅ User has ${freshUser.monthlyReportLimit} quota remaining`);
-        
+    } else {
+        console.log('⚠️ Skipping quota check - User just reported issue');
+        // Vẫn cần lấy user để biết plan
+        freshUser = await refreshUserFromDatabase();
+    }
+    
+    if (freshUser) {
         if (freshUser.plan === 'pro') {
             // User Pro: Skip ad, bắt đầu xem ngay
             console.log('⭐ Pro user - skipping ad, starting directly');
@@ -380,6 +390,22 @@ async function handleWatchAsGuest() {
     // User Free: Hiển thị modal chọn gói
     showPlanModal();
     console.log('📋 Plan selection modal opened');
+}
+
+/**
+ * Public function - Xử lý nút "Watch as Guest" (có kiểm tra quota)
+ */
+async function handleWatchAsGuest() {
+    await _watchAsGuestInternal(false); // Check quota
+}
+
+/**
+ * Internal function - Tự động chạy sau khi báo hỏng (không check quota)
+ * User đã bị trừ lượt rồi, phải cho xem để công bằng
+ */
+async function handleWatchAsGuestAfterReport() {
+    console.log('🔄 Auto-triggering Watch as Guest after report issue...');
+    await _watchAsGuestInternal(true); // Skip quota check
 }
 
 /**
@@ -867,8 +893,9 @@ Extension ID sẽ hiện ở banner màu xanh khi cài thành công.
 // EXPOSE FUNCTIONS FOR COOKIE RETRY HANDLER
 // ========================================
 
-// Make functions available globally for CookieRetryHandler
+// Make functions available globally for CookieRetryHandler and index.html
 window.injectCookieViaExtension = injectCookieViaExtension;
+window.handleWatchAsGuestAfterReport = handleWatchAsGuestAfterReport;
 window.state = state;
 window.CONFIG = CONFIG;
 window.showStepStatus = showStepStatus;

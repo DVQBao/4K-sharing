@@ -1392,14 +1392,23 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                 showCustomModal({
                     icon: '✅',
                     title: 'Thành công',
-                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/${maxLimit}\n\nHệ thống sẽ tự động chuyển sang tài khoản Netflix khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản Netflix mới.`,
-                    buttons: [{ text: 'OK', type: 'primary' }]
+                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/${maxLimit}\n\nHệ thống đang tự động chuyển sang tài khoản Netflix mới...`,
+                    buttons: [{ text: 'OK', type: 'primary', onClick: async () => {
+                        closeCustomModal();
+                        closeReportIssueModal();
+                        
+                        // Reload cookie info
+                        await loadCookieInfo();
+                        
+                        // TỰ ĐỘNG GỌI WATCH AS GUEST (bỏ qua check quota vì đã trừ rồi)
+                        if (typeof window.handleWatchAsGuestAfterReport === 'function') {
+                            console.log('🔄 Auto-starting Watch as Guest after report...');
+                            await window.handleWatchAsGuestAfterReport();
+                        } else {
+                            console.warn('⚠️ handleWatchAsGuestAfterReport not found in window');
+                        }
+                    }}]
                 });
-                
-                closeReportIssueModal();
-                
-                // Reload cookie info
-                await loadCookieInfo();
                 
             } catch (error) {
                 console.error('❌ Report issue error:', error);
