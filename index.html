@@ -17,10 +17,20 @@
                         url('Background.png') center/cover fixed;
             color: #fff;
             min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            min-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
         .container {
@@ -635,7 +645,9 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="main-wrapper">
+        <div class="main-content">
+            <div class="container">
         <!-- HEADER -->
         <div class="header">
             <h1>TIỆM BÁNH NETFLIX</h1>
@@ -816,11 +828,11 @@
                             </div>
                         </div>
 
-                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(59, 130, 246, 0.1); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(245, 158, 11, 0.1); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Nâng cấp lên Pro Plan
                         </button>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(245, 158, 11, 0.1); color: #60a5fa; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
@@ -850,8 +862,12 @@
             </div>
         </div>
         <!-- End Main Layout -->
+            </div>
+        <!-- End Container -->
+        </div>
+    <!-- End Main Content -->
     </div>
-    <!-- End Container -->
+    <!-- End Main Wrapper -->
 
     <!-- Plan Selection Modal -->
     <div class="modal" id="planModal">
