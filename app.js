@@ -301,9 +301,10 @@ async function refreshUserFromDatabase() {
 /**
  * Internal function - Xử lý Watch as Guest logic (dùng chung)
  * @param {boolean} skipQuotaCheck - Bỏ qua kiểm tra quota (sau khi báo hỏng)
+ * @param {boolean} skipAdAndPlanModal - Bỏ qua ad và plan modal (sau khi báo hỏng, đã xem ad 2s rồi)
  */
-async function _watchAsGuestInternal(skipQuotaCheck = false) {
-    console.log('📍 Step 2: Starting guest flow...', skipQuotaCheck ? '(skip quota check)' : '');
+async function _watchAsGuestInternal(skipQuotaCheck = false, skipAdAndPlanModal = false) {
+    console.log('📍 Step 2: Starting guest flow...', skipQuotaCheck ? '(skip quota check)' : '', skipAdAndPlanModal ? '(skip ad/plan modal)' : '');
     
     // Reset status
     hideStepStatus(2);
@@ -360,6 +361,32 @@ async function _watchAsGuestInternal(skipQuotaCheck = false) {
         freshUser = await refreshUserFromDatabase();
     }
     
+    // NẾU SAU KHI BÁO HỎNG → BỎ QUA AD VÀ PLAN MODAL, INJECT COOKIE NGAY
+    if (skipAdAndPlanModal) {
+        console.log('🚀 After report issue - Skip ad/plan modal, inject cookie directly');
+        showToast('🎬 Đang tự động inject tài khoản Netflix mới...', 'success');
+        
+        // Mở modal và chỉ hiện watching section
+        elements.adModal.classList.add('active');
+        
+        // Ẩn ad section, hiện watching section
+        if (elements.adSection) elements.adSection.style.display = 'none';
+        if (elements.watchingSection) elements.watchingSection.style.display = 'block';
+        
+        // Hiện thông báo đang xử lý
+        showStepStatus(2, 'success', '⏳ Đang inject tài khoản Netflix mới...');
+        if (elements.watchingProgress) {
+            elements.watchingProgress.textContent = '⏳ Đang inject tài khoản Netflix mới...';
+        }
+        
+        // Tự động bắt đầu
+        setTimeout(() => {
+            handleStartWatching();
+        }, 500);
+        return;
+    }
+    
+    // FLOW THÔNG THƯỜNG: KIỂM TRA PLAN
     if (freshUser) {
         if (freshUser.plan === 'pro') {
             // User Pro: Skip ad, bắt đầu xem ngay
@@ -396,16 +423,16 @@ async function _watchAsGuestInternal(skipQuotaCheck = false) {
  * Public function - Xử lý nút "Watch as Guest" (có kiểm tra quota)
  */
 async function handleWatchAsGuest() {
-    await _watchAsGuestInternal(false); // Check quota
+    await _watchAsGuestInternal(false, false); // Check quota, show ad/plan modal
 }
 
 /**
- * Internal function - Tự động chạy sau khi báo hỏng (không check quota)
- * User đã bị trừ lượt rồi, phải cho xem để công bằng
+ * Internal function - Tự động chạy sau khi báo hỏng (không check quota, không xem ad/plan)
+ * User đã bị trừ lượt và xem quảng cáo 2s rồi, phải cho inject cookie ngay để công bằng
  */
 async function handleWatchAsGuestAfterReport() {
     console.log('🔄 Auto-triggering Watch as Guest after report issue...');
-    await _watchAsGuestInternal(true); // Skip quota check
+    await _watchAsGuestInternal(true, true); // Skip quota check + Skip ad/plan modal
 }
 
 /**
