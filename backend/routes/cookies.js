@@ -454,6 +454,7 @@ router.post('/report-issue', authenticateToken, async (req, res) => {
         console.log(`📋 Reason:`, reason, customReason);
         
         const User = require('../models/User');
+        const { COOKIE_LIMITS } = require('../models/User');
         const user = await User.findById(userId);
         
         if (!user) {
@@ -465,19 +466,21 @@ router.post('/report-issue', authenticateToken, async (req, res) => {
         const lastReset = new Date(user.lastReportReset);
         const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24);
         
-        // Reset counter if more than 30 days
+        // Reset counter if more than 30 days - use plan-based limit
         if (daysSinceReset >= 30) {
-            user.monthlyReportLimit = 3;
+            user.monthlyReportLimit = COOKIE_LIMITS[user.plan] || COOKIE_LIMITS.free;
             user.lastReportReset = now;
             await user.save();
-            console.log('🔄 Reset monthly report limit to 3');
+            console.log(`🔄 Reset monthly report limit to ${user.monthlyReportLimit} (${user.plan} plan)`);
         }
         
-        // Check limit
+        // Check limit - return different error based on plan
         if (user.monthlyReportLimit <= 0) {
             console.log('❌ User reached monthly report limit');
             return res.status(429).json({ 
-                error: 'Bạn đã hết lượt đổi tài khoản trong tháng này. Vui lòng liên hệ admin.',
+                code: 'LIMIT_EXCEEDED',
+                plan: user.plan,
+                error: 'Bạn đã hết lượt đổi tài khoản trong tháng này.',
                 remainingReports: 0
             });
         }

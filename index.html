@@ -811,16 +811,16 @@
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="color: #ddd; font-size: 0.9rem;">Lượt đổi tài khoản Netflix còn lại:</span>
-                                    <span id="reportLimit" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">3/3</span>
+                                    <span id="reportLimit" style="color: #fbbf24; font-weight: 600; font-size: 0.95rem;">2/2</span>
                                 </div>
                             </div>
                         </div>
 
-                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="openUpgradeToProModal()" class="btn" style="background: rgba(59, 130, 246, 0.1); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Nâng cấp lên Pro Plan
                         </button>
 
-                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(245, 158, 11, 0.1); color: #fbbf24; margin-bottom: 10px; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; transition: all 0.3s;">
+                        <button onclick="showReportIssueModal()" class="btn" style="background: rgba(245, 158, 11, 0.1); color: #60a5fa; margin-bottom: 10px; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; transition: all 0.3s;">
                             Báo hỏng và đổi tài khoản Netflix
                         </button>
 
@@ -1015,9 +1015,8 @@
             <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 0.9rem; line-height: 1.6;">
                     <strong>Lưu ý quan trọng:</strong><br>
-                    • Nếu kiểm tra thấy cookie vẫn dùng được, bạn có thể bị hạn chế vì lạm dụng.<br>
-                    • Mỗi tháng bạn chỉ có <strong>3 lần</strong> đổi tài khoản.<br>
-                    • Số lần còn lại: <strong id="reportLimitModal">3/3</strong>
+                    • Nếu kiểm tra thấy tài khoản Netflix vẫn còn dùng được, bạn có thể bị hạn chế vì lạm dụng.<br>
+                    • Số lần còn lại: <strong id="reportLimitModal">2/2</strong>
                 </p>
             </div>
             
@@ -1209,9 +1208,11 @@
                     
                     // Update report limit display
                     if (data.user && reportLimitElement) {
-                        const limit = data.user.monthlyReportLimit !== undefined ? data.user.monthlyReportLimit : 3;
-                        reportLimitElement.textContent = `${limit}/3`;
-                        reportLimitElement.style.color = limit > 1 ? '#10b981' : limit > 0 ? '#fbbf24' : '#ef4444';
+                        const limit = data.user.monthlyReportLimit !== undefined ? data.user.monthlyReportLimit : 2;
+                        const maxLimit = data.user.plan === 'pro' ? 5 : 2;
+                        const threshold = Math.floor(maxLimit / 2);
+                        reportLimitElement.textContent = `${limit}/${maxLimit}`;
+                        reportLimitElement.style.color = limit > threshold ? '#10b981' : limit > 0 ? '#fbbf24' : '#ef4444';
                     }
                 }
             } catch (error) {
@@ -1342,6 +1343,17 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                 const data = await response.json();
                 
                 if (!response.ok) {
+                    // Handle LIMIT_EXCEEDED error
+                    if (data.code === 'LIMIT_EXCEEDED') {
+                        closeReportIssueModal();
+                        if (data.plan === 'free') {
+                            showLimitExceededFreeModal();
+                        } else {
+                            showLimitExceededProModal();
+                        }
+                        return;
+                    }
+                    
                     showCustomModal({
                         icon: '❌',
                         title: 'Lỗi',
@@ -1351,11 +1363,14 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                     return;
                 }
                 
-                // Success
+                // Success - get current user plan
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                const maxLimit = currentUser.plan === 'pro' ? 5 : 2;
+                
                 showCustomModal({
                     icon: '✅',
                     title: 'Thành công',
-                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/3\n\nHệ thống sẽ tự động chuyển sang tài khoản khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản mới.`,
+                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/${maxLimit}\n\nHệ thống sẽ tự động chuyển sang tài khoản Netflix khác. Vui lòng bấm "Watch as Guest" để sử dụng tài khoản Netflix mới.`,
                     buttons: [{ text: 'OK', type: 'primary' }]
                 });
                 
@@ -1373,6 +1388,46 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                     buttons: [{ text: 'OK', type: 'danger' }]
                 });
             }
+        }
+        
+        // ========================================
+        // LIMIT EXCEEDED MODALS
+        // ========================================
+        
+        function showLimitExceededFreeModal() {
+            showConfirmCustomModal({
+                icon: '⚠️',
+                title: 'HẾT LƯỢT ĐỔI TÀI KHOẢN',
+                message: `Bạn đã sử dụng hết 2 lượt đổi tài khoản Netflix của gói Free trong tháng này.
+
+Nâng cấp lên Pro để có 5 lượt/tháng và nhiều quyền lợi khác:
+• Xem phim không quảng cáo
+• Tăng số lượt đổi tài khoản Netflix lên 5 lượt/tháng
+• Ưu tiên hỗ trợ khi có sự cố
+• Trải nghiệm mượt mà – giải trí không gián đoạn!`,
+                confirmText: 'Nâng cấp Pro',
+                cancelText: 'Đóng'
+            }).then(confirmed => {
+                if (confirmed) {
+                    openPaymentModal('pro', '20.000đ/tháng', 'pro');
+                }
+            });
+        }
+        
+        function showLimitExceededProModal() {
+            showConfirmCustomModal({
+                icon: '⚠️',
+                title: 'HẾT LƯỢT ĐỔI TÀI KHOẢN',
+                message: `Bạn đã sử dụng hết 5 lượt đổi tài khoản Netflix của gói Pro trong tháng này.
+
+Vui lòng liên hệ Support (Facebook) để chúng tôi kiểm tra và reset lượt đổi nếu bạn không lạm dụng tài khoản Netflix.`,
+                confirmText: 'Liên hệ Support',
+                cancelText: 'Đóng'
+            }).then(confirmed => {
+                if (confirmed) {
+                    window.open('https://www.facebook.com/dvqb99/', '_blank');
+                }
+            });
         }
         
         // ========================================
@@ -1739,6 +1794,45 @@ Vui lòng xem quảng cáo để hoàn tất.`,
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer style="background: rgba(0, 0, 0, 0.3); padding: 40px 20px; margin-top: 60px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: #fff; font-size: 1.3rem; margin-bottom: 15px;">Tiệm Bánh Netflix</h3>
+                <p style="color: #ddd; font-size: 0.95rem; max-width: 600px; margin: 0 auto;">
+                    Nền tảng chia sẻ tài khoản Netflix hợp pháp cho cộng đồng. Giúp bạn tiết kiệm chi phí khi có nhu cầu xem phim thấp.
+                </p>
+            </div>
+            
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 25px; margin-bottom: 25px;">
+                <a href="privacy-policy.html" style="color: #fff; text-decoration: none; font-size: 0.95rem; transition: color 0.3s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='#fff'">
+                    Chính Sách Bảo Mật
+                </a>
+                <span style="color: rgba(255, 255, 255, 0.3);">|</span>
+                <a href="terms-of-service.html" style="color: #fff; text-decoration: none; font-size: 0.95rem; transition: color 0.3s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='#fff'">
+                    Điều Khoản Sử Dụng
+                </a>
+                <span style="color: rgba(255, 255, 255, 0.3);">|</span>
+                <a href="contact.html" style="color: #fff; text-decoration: none; font-size: 0.95rem; transition: color 0.3s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='#fff'">
+                    Liên Hệ
+                </a>
+                <span style="color: rgba(255, 255, 255, 0.3);">|</span>
+                <a href="install-guide.html" style="color: #fff; text-decoration: none; font-size: 0.95rem; transition: color 0.3s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='#fff'">
+                    Hướng Dẫn Cài Đặt
+                </a>
+            </div>
+            
+            <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin: 0;">
+                    © 2025 Tiệm Bánh Netflix. Hoạt động minh bạch, tuân thủ pháp luật Việt Nam.
+                </p>
+                <p style="color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; margin-top: 8px;">
+                    Tất cả tài khoản Netflix được chia sẻ đều thuộc sở hữu hợp pháp của chúng tôi.
+                </p>
+            </div>
+        </div>
+    </footer>
 
     <script src="cookie-retry-handler.js"></script>
     <script src="app.js"></script>

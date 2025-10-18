@@ -5,6 +5,12 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Cookie/Report Limits by Plan
+const COOKIE_LIMITS = {
+    free: 2,
+    pro: 5
+};
+
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -84,7 +90,9 @@ const userSchema = new mongoose.Schema({
     },
     monthlyReportLimit: {
         type: Number,
-        default: 3
+        default: function() {
+            return COOKIE_LIMITS[this.plan] || COOKIE_LIMITS.free;
+        }
     },
     lastReportReset: {
         type: Date,
@@ -132,5 +140,7 @@ userSchema.methods.toJSON = function() {
     return obj;
 };
 
+// Export COOKIE_LIMITS for use in other modules
 module.exports = mongoose.model('User', userSchema);
+module.exports.COOKIE_LIMITS = COOKIE_LIMITS;
 
