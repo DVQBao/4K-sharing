@@ -280,10 +280,25 @@ function handleWatchAsGuest() {
         showToast('Cần cài extension để bắt đầu', 'warning');
     }
     
-    // Kiểm tra user plan
+    // Kiểm tra user plan và monthly report limit
     const currentUser = localStorage.getItem('current_user');
     if (currentUser) {
         const user = JSON.parse(currentUser);
+        
+        // Kiểm tra hết lượt đổi tài khoản (monthlyReportLimit <= 0)
+        if (user.monthlyReportLimit !== undefined && user.monthlyReportLimit <= 0) {
+            console.log('⛔ User has reached monthly report limit');
+            
+            if (user.plan === 'free') {
+                // Free user: Show upgrade modal
+                showLimitExceededFreeModal();
+            } else if (user.plan === 'pro') {
+                // Pro user: Show support contact modal
+                showLimitExceededProModal();
+            }
+            
+            return; // Stop execution
+        }
         if (user.plan === 'pro') {
             // User Pro: Skip ad, bắt đầu xem ngay
             console.log('⭐ Pro user - skipping ad, starting directly');

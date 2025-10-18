@@ -16,8 +16,9 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.8;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #e5e5e5;
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%), 
+                        url('Background.png') center/cover fixed;
             min-height: 100vh;
             padding: 40px 20px;
         }
@@ -25,10 +26,12 @@
         .container {
             max-width: 900px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
             padding: 50px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         h1 {
@@ -47,16 +50,19 @@
         }
 
         h2 {
-            color: #2c3e50;
+            color: #fff;
             font-size: 1.6rem;
             margin-top: 35px;
             margin-bottom: 15px;
             border-left: 4px solid #e50914;
             padding-left: 15px;
+            background: rgba(229, 9, 20, 0.05);
+            padding: 15px;
+            border-radius: 8px;
         }
 
         h3 {
-            color: #34495e;
+            color: #fbbf24;
             font-size: 1.2rem;
             margin-top: 25px;
             margin-bottom: 12px;
@@ -77,18 +83,20 @@
         }
 
         .highlight {
-            background: #fff3cd;
+            background: rgba(251, 191, 36, 0.1);
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
             margin: 25px 0;
         }
 
         .important {
-            background: #f8d7da;
+            background: rgba(239, 68, 68, 0.1);
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #dc3545;
+            border-left: 4px solid #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
             margin: 25px 0;
         }
 
@@ -96,33 +104,35 @@
             text-align: center;
             margin-top: 40px;
             padding-top: 30px;
-            border-top: 2px solid #eee;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .nav-links a {
             display: inline-block;
             margin: 10px 15px;
             padding: 12px 25px;
-            background: #667eea;
+            background: rgba(229, 9, 20, 0.2);
             color: white;
             text-decoration: none;
             border-radius: 8px;
             transition: all 0.3s;
             font-weight: 600;
+            border: 1px solid rgba(229, 9, 20, 0.3);
         }
 
         .nav-links a:hover {
-            background: #764ba2;
+            background: rgba(229, 9, 20, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
         }
 
         .contact-info {
-            background: #e8f5e9;
+            background: rgba(16, 185, 129, 0.1);
             padding: 20px;
             border-radius: 8px;
             margin-top: 30px;
             text-align: center;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         @media (max-width: 768px) {
@@ -225,7 +235,7 @@
             <li><strong>HTTPS:</strong> Tất cả dữ liệu truyền tải được mã hóa SSL/TLS</li>
             <li><strong>JWT Token:</strong> Xác thực phiên làm việc an toàn</li>
             <li><strong>Rate Limiting:</strong> Chống brute force và DDoS</li>
-            <li><strong>Database Security:</strong> MongoDB với xác thực và phân quyền</li>
+            <li><strong>Database Security:</strong> Databse với xác thực và phân quyền</li>
         </ul>
 
         <h3>4.2. Bảo mật vận hành</h3>
@@ -286,20 +296,11 @@
         <h3>8.1. Không chia sẻ thông tin cá nhân</h3>
         <p>Chúng tôi KHÔNG chia sẻ thông tin cá nhân của bạn với bất kỳ bên thứ ba nào, trừ các trường hợp bắt buộc theo pháp luật.</p>
 
-        <h3>8.2. Nhà cung cấp dịch vụ</h3>
-        <p>Chúng tôi sử dụng các dịch vụ sau để vận hành hệ thống:</p>
-        <ul>
-            <li><strong>MongoDB Atlas:</strong> Lưu trữ cơ sở dữ liệu (tuân thủ GDPR)</li>
-            <li><strong>Render.com:</strong> Hosting website (tuân thủ SOC 2)</li>
-            <li><strong>Cloudflare:</strong> CDN và bảo mật (tuân thủ GDPR)</li>
-        </ul>
-        <p>Tất cả nhà cung cấp này đều có chính sách bảo mật riêng và tuân thủ các tiêu chuẩn bảo mật quốc tế.</p>
-
-        <h3>8.3. Yêu cầu pháp lý</h3>
+        <h3>8.2. Yêu cầu pháp lý</h3>
         <p>Chúng tôi có thể tiết lộ thông tin nếu được yêu cầu bởi cơ quan có thẩm quyền theo quy định pháp luật Việt Nam.</p>
 
         <h2>9. Bảo Vệ Trẻ Em</h2>
-        <p>Dịch vụ của chúng tôi dành cho người từ 16 tuổi trở lên. Chúng tôi không cố意thu thập thông tin từ trẻ em dưới 16 tuổi. Nếu bạn là phụ huynh và phát hiện con bạn đã đăng ký, vui lòng liên hệ để chúng tôi xóa thông tin.</p>
+        <p>Dịch vụ của chúng tôi dành cho người từ 16 tuổi trở lên. Chúng tôi không cố thu thập thông tin từ trẻ em dưới 16 tuổi. Nếu bạn là phụ huynh và phát hiện con bạn đã đăng ký, vui lòng liên hệ để chúng tôi xóa thông tin.</p>
 
         <h2>10. Minh Bạch Hoạt Động</h2>
         
