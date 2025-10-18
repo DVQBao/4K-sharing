@@ -1213,6 +1213,16 @@
                     const cookieElement = document.getElementById('assignedCookie');
                     const reportLimitElement = document.getElementById('reportLimit');
                     
+                    // ✅ CẬP NHẬT LOCALSTORAGE VỚI DỮ LIỆU MỚI TỪ DATABASE
+                    if (data.user) {
+                        localStorage.setItem('currentUser', JSON.stringify(data.user));
+                        localStorage.setItem('current_user', JSON.stringify(data.user));
+                        console.log('✅ Synced user data from database:', {
+                            plan: data.user.plan,
+                            monthlyReportLimit: data.user.monthlyReportLimit
+                        });
+                    }
+                    
                     if (data.cookieInfo && cookieElement) {
                         const { cookieNumber } = data.cookieInfo;
                         cookieElement.textContent = `#${cookieNumber}`;
@@ -1535,8 +1545,15 @@ Vui lòng liên hệ Support (Facebook) để chúng tôi kiểm tra và reset l
                 // Avatar emoji based on provider
                 document.getElementById('userAvatar').textContent = user.provider === 'google' ? '🔵' : '👤';
                 
-                // Load cookie info from backend
+                // Load cookie info from backend (initial)
                 loadCookieInfo();
+                
+                // ✅ AUTO-REFRESH USER DATA MỖI 30 GIÂY ĐỂ SYNC VỚI DATABASE
+                // Nếu admin đổi plan/quota → User sẽ được cập nhật tự động
+                setInterval(() => {
+                    console.log('🔄 Auto-syncing user data from database...');
+                    loadCookieInfo();
+                }, 30000); // 30 seconds
                 
                 // Enable guest section
                 const loginRequired = document.getElementById('loginRequired');
