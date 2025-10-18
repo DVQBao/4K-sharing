@@ -1379,9 +1379,15 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                     return;
                 }
                 
-                // Success - get current user plan
-                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                // Success - Update localStorage with new quota
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('current_user') || '{}');
                 const maxLimit = currentUser.plan === 'pro' ? 5 : 2;
+                
+                // CẬP NHẬT QUOTA MỚI VÀO LOCALSTORAGE
+                currentUser.monthlyReportLimit = data.remainingReports;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                console.log('✅ Updated localStorage with new quota:', data.remainingReports);
                 
                 showCustomModal({
                     icon: '✅',

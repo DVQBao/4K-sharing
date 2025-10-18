@@ -246,6 +246,55 @@ function handleOpenNetflix() {
 }
 
 // ========================================
+// REFRESH USER DATA FROM DATABASE
+// ========================================
+
+/**
+ * Refresh current user data from backend database
+ * Returns fresh user object with latest quota, plan, etc.
+ */
+async function refreshUserFromDatabase() {
+    try {
+        const authToken = localStorage.getItem('auth_token');
+        if (!authToken) {
+            console.warn('⚠️ No auth token found');
+            return null;
+        }
+        
+        console.log('🔄 Refreshing user data from database...');
+        const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('❌ Failed to refresh user data:', response.status);
+            return null;
+        }
+        
+        const data = await response.json();
+        if (data.success && data.user) {
+            // Update localStorage with fresh data
+            localStorage.setItem('current_user', JSON.stringify(data.user));
+            console.log('✅ User data refreshed from database:', {
+                plan: data.user.plan,
+                monthlyReportLimit: data.user.monthlyReportLimit
+            });
+            return data.user;
+        }
+        
+        return null;
+        
+    } catch (error) {
+        console.error('❌ Refresh user data error:', error);
+        return null;
+    }
+}
+
+// ========================================
 // STEP 2: WATCH AS GUEST
 // ========================================
 
@@ -253,7 +302,7 @@ function handleOpenNetflix() {
  * Xử lý nút "Watch as Guest"
  * Hiển thị modal chọn gói: Free (ad) hoặc Pro (20k/tháng)
  */
-function handleWatchAsGuest() {
+async function handleWatchAsGuest() {
     console.log('📍 Step 2: Starting guest flow...');
     
     // Reset status
@@ -280,26 +329,29 @@ function handleWatchAsGuest() {
         showToast('Cần cài extension để bắt đầu', 'warning');
     }
     
-    // Kiểm tra user plan và monthly report limit
-    const currentUser = localStorage.getItem('current_user');
-    if (currentUser) {
-        const user = JSON.parse(currentUser);
-        
+    // KIỂM TRA QUOTA TỪ DATABASE TRƯỚC KHI CHO XEM
+    console.log('🔍 Checking quota from database...');
+    const freshUser = await refreshUserFromDatabase();
+    
+    if (freshUser) {
         // Kiểm tra hết lượt đổi tài khoản (monthlyReportLimit <= 0)
-        if (user.monthlyReportLimit !== undefined && user.monthlyReportLimit <= 0) {
-            console.log('⛔ User has reached monthly report limit');
+        if (freshUser.monthlyReportLimit !== undefined && freshUser.monthlyReportLimit <= 0) {
+            console.log('⛔ User has reached monthly report limit (checked from DB)');
             
-            if (user.plan === 'free') {
+            if (freshUser.plan === 'free') {
                 // Free user: Show upgrade modal
                 showLimitExceededFreeModal();
-            } else if (user.plan === 'pro') {
+            } else if (freshUser.plan === 'pro') {
                 // Pro user: Show support contact modal
                 showLimitExceededProModal();
             }
             
             return; // Stop execution
         }
-        if (user.plan === 'pro') {
+        
+        console.log(`✅ User has ${freshUser.monthlyReportLimit} quota remaining`);
+        
+        if (freshUser.plan === 'pro') {
             // User Pro: Skip ad, bắt đầu xem ngay
             console.log('⭐ Pro user - skipping ad, starting directly');
             showToast('⭐ Pro user - Bắt đầu xem ngay!', 'success');
