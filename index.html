@@ -1389,23 +1389,39 @@ Vui lòng xem quảng cáo để hoàn tất.`,
                 localStorage.setItem('current_user', JSON.stringify(currentUser));
                 console.log('✅ Updated localStorage with new quota:', data.remainingReports);
                 
+                closeReportIssueModal();
+                
+                // Reload cookie info
+                await loadCookieInfo();
+                
                 showCustomModal({
                     icon: '✅',
                     title: 'Thành công',
-                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/${maxLimit}\n\nHệ thống đang tự động chuyển sang tài khoản Netflix mới...`,
+                    message: `${data.message}\n\nSố lần còn lại: ${data.remainingReports}/${maxLimit}\n\nBấm OK để hệ thống tự động chuyển sang tài khoản Netflix mới.`,
                     buttons: [{ text: 'OK', type: 'primary', onClick: async () => {
                         closeCustomModal();
-                        closeReportIssueModal();
                         
-                        // Reload cookie info
-                        await loadCookieInfo();
-                        
-                        // TỰ ĐỘNG GỌI WATCH AS GUEST (bỏ qua check quota vì đã trừ rồi)
-                        if (typeof window.handleWatchAsGuestAfterReport === 'function') {
-                            console.log('🔄 Auto-starting Watch as Guest after report...');
-                            await window.handleWatchAsGuestAfterReport();
-                        } else {
-                            console.warn('⚠️ handleWatchAsGuestAfterReport not found in window');
+                        // TỰ ĐỘNG MỞ NETFLIX TAB NẾU CHƯA CÓ
+                        if (typeof window.netflixGuestApp !== 'undefined') {
+                            const state = window.netflixGuestApp.state;
+                            
+                            // Check if Netflix tab exists
+                            if (!state.netflixTabRef || state.netflixTabRef.closed) {
+                                console.log('📂 Netflix tab not found, auto-opening...');
+                                // Trigger open Netflix
+                                const openNetflixBtn = document.getElementById('openNetflixBtn');
+                                if (openNetflixBtn) {
+                                    openNetflixBtn.click();
+                                    // Wait for tab to open
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+                                }
+                            }
+                            
+                            // TỰ ĐỘNG TRIGGER WATCH AS GUEST (skip quota check)
+                            console.log('🔄 Auto-triggering Watch as Guest after report...');
+                            if (typeof window.handleWatchAsGuestAfterReport === 'function') {
+                                await window.handleWatchAsGuestAfterReport();
+                            }
                         }
                     }}]
                 });
